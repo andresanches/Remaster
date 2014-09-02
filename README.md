@@ -19,7 +19,7 @@ Controls
 * Keyboard arrows: directional pad
 * Key X: button #1
 * Key Z: button #2
-* Enter: Pause
+* Space bar: Pause
 
 Observations
 ============
