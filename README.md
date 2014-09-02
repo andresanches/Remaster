@@ -16,10 +16,10 @@ Features
 Controls
 ========
 
-Keyboard arrows: directional pad
-Key X: button #1
-Key Z: button #2
-Enter: Pause
+* Keyboard arrows: directional pad
+* Key X: button #1
+* Key Z: button #2
+* Enter: Pause
 
 Observations
 ============
