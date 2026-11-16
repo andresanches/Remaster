@@ -18,6 +18,9 @@ public final class Remaster extends Frame {
   VRAMViewer vramviewer;
   CRAMViewer cramviewer;
   
+  boolean adjustingAspect = false;   // guards against the aspect-correction loop
+  int lastCanvasW = 0, lastCanvasH = 0;
+  
   MenuBar menubar;
   Menu file;
   Menu emulator;
@@ -44,6 +47,35 @@ public final class Remaster extends Frame {
     screen = new Screen(drawsurface, 256, 192);
     screen.clearBuffer();
     add(drawsurface, BorderLayout.CENTER);
+    
+    // Keep the drawing area with the same 4:3 aspect ratio of the SMS video
+    // output (256x192 pixels on a 4:3 CRT) when the window is resized.
+    addComponentListener(new ComponentAdapter() {
+      public void componentResized(ComponentEvent e) {
+        if(adjustingAspect) return;
+        Dimension fs = getSize();
+        Insets in  = getInsets();
+        int cw = fs.width  - in.left - in.right;   // drawing area size
+        int ch = fs.height - in.top  - in.bottom;
+        if(cw <= 0 || ch <= 0) return;
+        
+        int dcw = Math.abs(cw - lastCanvasW), dch = Math.abs(ch - lastCanvasH);
+        lastCanvasW = cw; lastCanvasH = ch;
+        if(dcw == 0 && dch == 0) return;  // window realized or size unchanged: nothing to do
+        
+        // Correct from whichever dimension the user dragged the most.
+        int newCw, newCh;
+        if(dcw >= dch) { newCw = cw;      newCh = Math.round(cw * 3f / 4f); }
+        else           { newCh = ch;      newCw = Math.round(ch * 4f / 3f); }
+        
+        int fw = newCw + in.left + in.right, fh = newCh + in.top + in.bottom;
+        if(fw != fs.width || fh != fs.height) {
+          adjustingAspect = true;
+          setSize(fw, fh);
+          adjustingAspect = false;
+        }
+      }
+    });
     
     // Set up emulation classes 
     joy = new Joystick();
@@ -213,8 +245,12 @@ public final class Remaster extends Frame {
     	else { debugger.toggleEnabled(); drawsurface.requestFocus(); } } } );
     // Display menu
     fullscreen.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { screen.toggleFullScreen(remaster);	} } );
-    originalsize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setSize(264, 238); validate(); } } );
-    doublesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setSize(520, 430); validate(); } } );
+    originalsize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
+    	Insets in = getInsets();   // exact canvas size = 256x192 + window borders
+    	setSize(in.left + in.right + 256, in.top + in.bottom + 192); validate(); } } );
+    doublesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
+    	Insets in = getInsets();   // exact canvas size = 512x384 + window borders
+    	setSize(in.left + in.right + 512, in.top + in.bottom + 384); validate(); } } );
     // Sound menu
     enablesound.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.enabled = !psg.enabled; } } );
     crappysync.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.crappy_sync = !psg.crappy_sync; } } );
