@@ -53,6 +53,7 @@ public final class Remaster extends Frame {
     addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent e) {
         if(adjustingAspect) return;
+        if(screen != null && screen.fullscreen) return;  // the borderless fullscreen window owns the geometry
         Dimension fs = getSize();
         Insets in  = getInsets();
         int cw = fs.width  - in.left - in.right;   // drawing area size

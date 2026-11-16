@@ -7,7 +7,7 @@ public final class Screen {
   Component     drawsurface;
   BufferedImage screen;
   int           pixels[];  // framebuffer storage, the VDP writes pixels directly here
-  Window        win;
+  Rectangle     windowedBounds;  // window bounds to restore when leaving fullscreen
   boolean       fullscreen;
   
   public Screen(Component drawsurface, int width, int height) {
@@ -61,7 +61,17 @@ public final class Screen {
         do {
           Graphics g = bs.getDrawGraphics();
           if(!fullscreen) g.drawImage(this.screen, x, y, drawsurface.getWidth(), drawsurface.getHeight(), null);
-          else            g.drawImage(this.screen, 32, 0, null);  // 1:1, centered in the 320x200 display mode
+          else {
+            // Borderless fullscreen: scale the 4:3 picture to fit the whole
+            // screen and center it. The black fill underneath becomes the
+            // letterbox bars (sidebars on a modern 16:9 panel).
+            int sw = drawsurface.getWidth(), sh = drawsurface.getHeight();
+            double s = Math.min((double)sw / width, (double)sh / height);
+            int dw = (int)Math.round(width * s), dh = (int)Math.round(height * s);
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, sw, sh);
+            g.drawImage(this.screen, (sw - dw) / 2, (sh - dh) / 2, dw, dh, null);
+          }
           g.dispose();
         } while(bs.contentsRestored());
         bs.show();
@@ -84,8 +94,8 @@ public final class Screen {
   
   // createBufferStrategy/getBufferStrategy are public only on Window and Canvas
   // (they're protected in Component and in Panel), so dispatch on the surface's
-  // class. Frame and Dialog are Window subclasses; drawing surfaces here are
-  // Canvas subclasses or the fullscreen Window.
+  // class. Drawing surfaces here are Canvas subclasses (DrawSurface, the CRAM
+  // viewer's swatch); the Window case is kept for robustness.
   private final BufferStrategy getStrategy() {
     if(drawsurface instanceof Window) return ((Window)drawsurface).getBufferStrategy();
     if(drawsurface instanceof Canvas) return ((Canvas)drawsurface).getBufferStrategy();
@@ -97,31 +107,37 @@ public final class Screen {
     else if(drawsurface instanceof Canvas) ((Canvas)drawsurface).createBufferStrategy(2);
   }
   
+  // Pseudo-fullscreen: instead of Full-Screen Exclusive Mode (setFullScreenWindow
+  // + setDisplayMode, a 2003-era Windows API that modern macOS mostly ignores or
+  // mishandles), the main window itself turns borderless and maximized, covering
+  // the screen so it looks like fullscreen. It keeps the desktop resolution,
+  // works on every platform, and stays the same window (same Canvas, same key
+  // listeners), so there is no second window to hand focus or strategies to.
   public void toggleFullScreen(Remaster frame) {
-  	GraphicsDevice sd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-  	if(!fullscreen) {
- 	    win = new Window(frame);
- 		win.addKeyListener(frame.drawsurface.getKeyListeners()[0]);
- 		win.setBackground(new Color(0));
- 		drawsurface = win;
- 		sd.setFullScreenWindow(win);
- 		win.requestFocus();
- 		
- 	  	DisplayMode[] available = sd.getDisplayModes();
- 	  	for(int i=0; i < available.length; i++) {
- 	  		if(available[i].getWidth() == 320 && available[i].getHeight() == 200 && available[i].getBitDepth() == 16 && available[i].getRefreshRate() == 60) {
- 	  			sd.setDisplayMode(available[i]);
- 	  			break;
- 	  		}
- 	  	}
- 	  	fullscreen = true;
-  	}
-  	else {
-  		sd.setFullScreenWindow(null);
-  		if(win != null) { win.dispose(); win = null; }  // release the native peer of the fullscreen window
-  		drawsurface = frame.drawsurface;
-  		fullscreen = false;
-  		// a new BufferStrategy is created lazily on the next drawScreen()
+    if(!fullscreen) {
+      windowedBounds = new Rectangle(frame.getLocation(), frame.getSize());
+      fullscreen = true;   // tell drawScreen() and the aspect listener before the resize storm
+      frame.dispose();     // setUndecorated() only works on a hidden frame; this also
+                           // destroys the BufferStrategy, recreated right after showing
+      frame.setUndecorated(true);
+      frame.setAlwaysOnTop(true);
+      frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+      frame.setVisible(true);
+      tryCreateStrategy();
+      drawsurface.requestFocus();
+    }
+    else {
+      frame.dispose();
+      frame.setUndecorated(false);
+      frame.setAlwaysOnTop(false);
+      frame.setExtendedState(Frame.NORMAL);
+      if(windowedBounds != null) frame.setBounds(windowedBounds);
+      fullscreen = false;
+      frame.setVisible(true);
+      // some platforms drop the menu bar while the frame is undecorated
+      if(frame.getMenuBar() == null && frame.menubar != null) frame.setMenuBar(frame.menubar);
+      tryCreateStrategy();
+      drawsurface.requestFocus();
     }
   }
 }

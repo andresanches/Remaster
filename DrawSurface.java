@@ -53,6 +53,9 @@ public final class DrawSurface extends Canvas {
 	        		case 119:  // F8 key - toggle crappy sound synchronization on/off
 	        				parent.psg.crappy_sync = !parent.psg.crappy_sync;
 	        			break;
+	        		case 122:  // F11 key - borderless fullscreen on/off
+	        			parent.screen.toggleFullScreen(parent);
+	        			break;
 	        		default:
 	        			//if(parent.z80 != null) parent.z80.msg.println("Key pressed = " + e.getKeyCode());
 	        	}
