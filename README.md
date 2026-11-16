@@ -1,7 +1,9 @@
 Remaster
 ========
 
-SEGA Master System/Mark III emulator writtten 100% in Java. This project was created as a partial requirement for the completion of my B.Sc. degree in Computer Science.
+SEGA Master System/Mark III emulator writtten 100% in Java with zero external dependencies.
+
+This project was created as a partial requirement for the completion of my B.Sc. degree in Computer Science.
 
 Features
 ========
@@ -12,6 +14,7 @@ Features
 * A basic debugger displays CPU, VDP and PSG register values in real time
 * A basic Video RAM viewer allows for displaying visual tiles in real time
 * A basic palette viewer allows for displaying the current active collors in real time
+* All graphics, sound, and input systems are built using Java's standard library. No need for a convoluted build system.
 
 Controls
 ========
