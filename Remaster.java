@@ -165,16 +165,19 @@ public final class Remaster extends Frame {
     crappysync.setState(psg.crappy_sync);
     CheckboxMenuItem soundchan0 = new CheckboxMenuItem("Ligar/Desligar canal 0");
     soundchan0.setState(psg.chan0);
-    CheckboxMenuItem soundchan1 = new CheckboxMenuItem("Ligar/Desligar canal 0");
+    CheckboxMenuItem soundchan1 = new CheckboxMenuItem("Ligar/Desligar canal 1");
     soundchan1.setState(psg.chan1);
-    CheckboxMenuItem soundchan2 = new CheckboxMenuItem("Ligar/Desligar canal 0");
+    CheckboxMenuItem soundchan2 = new CheckboxMenuItem("Ligar/Desligar canal 2");
     soundchan2.setState(psg.chan2);
+    CheckboxMenuItem soundchan3 = new CheckboxMenuItem("Ligar/Desligar canal 3 (ruído)");
+    soundchan3.setState(psg.chan3);
     sound.add(enablesound);
     sound.add(crappysync);
     sound.addSeparator();
     sound.add(soundchan0);
     sound.add(soundchan1);
-    sound.add(soundchan2);  
+    sound.add(soundchan2);
+    sound.add(soundchan3);
     menubar.add(sound);
     
     help = new Menu("Ajuda"); // Set up help menu
@@ -216,9 +219,10 @@ public final class Remaster extends Frame {
     // Sound menu
     enablesound.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.enabled = !psg.enabled; } } );
     crappysync.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.crappy_sync = !psg.crappy_sync; } } );
-    soundchan0.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan0 = !psg.chan0; } } );    
-    soundchan1.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan1 = !psg.chan1; } } );    
+    soundchan0.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan0 = !psg.chan0; } } );
+    soundchan1.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan1 = !psg.chan1; } } );
     soundchan2.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan2 = !psg.chan2; } } );
+    soundchan3.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan3 = !psg.chan3; } } );
     // Help menu
     about.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { aboutFrame.setVisible(true); } } );
     
