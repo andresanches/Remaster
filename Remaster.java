@@ -267,7 +267,18 @@ public final class Remaster extends Frame {
   
   public static void main(String args[])
   {
-    new Remaster();
+    Remaster remaster = new Remaster();
+
+    // ROM file path can be passed on the command line: java Remaster game.sms
+    if(args.length > 0) {
+      if(remaster.cart.loadRom(args[0])) {
+        remaster.emulator.getItem(0).setLabel("Pause emulation");
+        remaster.startEmulation();
+      }
+      else {
+        System.out.println("Usage: java Remaster [romfile.sms]");
+      }
+    }
   }
 }
 
