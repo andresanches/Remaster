@@ -40,7 +40,7 @@ public final class Remaster extends Frame {
     setLayout(new BorderLayout());
     setTitle(Remaster.APPNAME);
     setLocation(100, 50);
-    setSize(264,238);
+    setSize(520, 430);   // rough 2x window; exact size is set after setVisible() below
 
     // create drawing surface panel and add it to the main frame
     drawsurface = new DrawSurface(this);
@@ -96,6 +96,10 @@ public final class Remaster extends Frame {
     menubar = setup_MenuBar();
     setMenuBar(menubar);
     setVisible(true);
+
+    // Start the emulator in 2x mode (512x384 canvas). Must happen after
+    // setVisible(): window insets are only known once the frame is displayable.
+    setWindowSize(2);
     
 /*    // --------- Debug - instruction trace output stream -------
     java.io.PrintStream trace = null;
@@ -183,10 +187,16 @@ public final class Remaster extends Frame {
     originalsize.setShortcut(new MenuShortcut(KeyEvent.VK_1));
     MenuItem doublesize = new MenuItem("Tamanho dobrado");
     doublesize.setShortcut(new MenuShortcut(KeyEvent.VK_2));
+    MenuItem triplesize = new MenuItem("Tamanho triplicado");
+    triplesize.setShortcut(new MenuShortcut(KeyEvent.VK_3));
+    MenuItem quadruplesize = new MenuItem("Tamanho quadruplicado");
+    quadruplesize.setShortcut(new MenuShortcut(KeyEvent.VK_4));
     display.add(fullscreen);
     display.addSeparator();
     display.add(originalsize);
     display.add(doublesize);
+    display.add(triplesize);
+    display.add(quadruplesize);
     menubar.add(display);
     
     sound = new Menu("Som");
@@ -246,12 +256,10 @@ public final class Remaster extends Frame {
     	else { debugger.toggleEnabled(); drawsurface.requestFocus(); } } } );
     // Display menu
     fullscreen.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { screen.toggleFullScreen(remaster);	} } );
-    originalsize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
-    	Insets in = getInsets();   // exact canvas size = 256x192 + window borders
-    	setSize(in.left + in.right + 256, in.top + in.bottom + 192); validate(); } } );
-    doublesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
-    	Insets in = getInsets();   // exact canvas size = 512x384 + window borders
-    	setSize(in.left + in.right + 512, in.top + in.bottom + 384); validate(); } } );
+    originalsize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setWindowSize(1); } } );
+    doublesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setWindowSize(2); } } );
+    triplesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setWindowSize(3); } } );
+    quadruplesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setWindowSize(4); } } );
     // Sound menu
     enablesound.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.enabled = !psg.enabled; } } );
     crappysync.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.crappy_sync = !psg.crappy_sync; } } );
@@ -263,6 +271,13 @@ public final class Remaster extends Frame {
     about.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { aboutFrame.setVisible(true); } } );
     
     return menubar;
+  }
+  
+  // Resize the window so the drawing area becomes an integer multiple of the
+  // 256x192 SMS output, keeping the 4:3 aspect ratio.
+  public void setWindowSize(int scale) {
+  	Insets in = getInsets();   // exact canvas size = (256 x 192) * scale + window borders
+  	setSize(in.left + in.right + 256 * scale, in.top + in.bottom + 192 * scale); validate();
   }
   
   public static void main(String args[])
