@@ -18,7 +18,7 @@ public final class Cartridge {
     openDialog = new FileDialog(parent, "Abrir ROM", FileDialog.LOAD);
     openDialog.setDirectory("./");
     openDialog.setFile("*.sms;*.gg");
-    openDialog.show();
+    openDialog.setVisible(true);
 
     fileName = openDialog.getFile();
     

@@ -81,8 +81,8 @@ public final class Remaster extends Frame {
     setTitle(Remaster.APPNAME + " - " + cart.getFileName());
     
     // Enable menu items
-    for(int i=0; i < file.getItemCount(); i++)     file.getItem(i).enable();
-    for(int i=0; i < emulator.getItemCount(); i++) emulator.getItem(i).enable();
+    for(int i=0; i < file.getItemCount(); i++)     file.getItem(i).setEnabled(true);
+    for(int i=0; i < emulator.getItemCount(); i++) emulator.getItem(i).setEnabled(true);
     
     if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; }
 
@@ -118,7 +118,7 @@ public final class Remaster extends Frame {
     openRom.setShortcut(new MenuShortcut(KeyEvent.VK_O));
     MenuItem closeRom = new MenuItem("Fechar ROM");
     closeRom.setShortcut(new MenuShortcut(KeyEvent.VK_C));
-    closeRom.disable();
+    closeRom.setEnabled(false);
     MenuItem exit =     new MenuItem("Sair");
     exit.setShortcut(new MenuShortcut(KeyEvent.VK_X));
     file.add(openRom);
@@ -127,15 +127,15 @@ public final class Remaster extends Frame {
     file.add(exit);
     menubar.add(file);
     
-    emulator = new Menu("Emulação"); // Set up Emulator menu
+    emulator = new Menu("EmulaÃ§Ã£o"); // Set up Emulator menu
     CheckboxMenuItem pauseresume = new CheckboxMenuItem("Pause");
-    pauseresume.disable();
+    pauseresume.setEnabled(false);
     CheckboxMenuItem vramview =    new CheckboxMenuItem("Habilitar visualizador de tiles (VRAM)");
-    vramview.disable();
+    vramview.setEnabled(false);
     CheckboxMenuItem cramview =    new CheckboxMenuItem("Habilitar visualizador da paleta de cores (CRAM)");
-    cramview.disable();
+    cramview.setEnabled(false);
     CheckboxMenuItem debug =       new CheckboxMenuItem("Habilitar Debugger");
-    debug.disable();
+    debug.setEnabled(false);
     emulator.add(pauseresume);
     emulator.addSeparator();
     emulator.add(vramview);
@@ -199,7 +199,7 @@ public final class Remaster extends Frame {
     // Emulation menu
     pauseresume.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) {
 		if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; drawsurface.requestFocus(); }
-		else { mainloop = new MainThread(screen, cart, memory, vdp, psg, ports, joy, z80, debugger, vramviewer, cramviewer); mainloop.start(); emulator.getItem(0).setLabel("Pausar emulação"); drawsurface.requestFocus(); } } } );
+		else { mainloop = new MainThread(screen, cart, memory, vdp, psg, ports, joy, z80, debugger, vramviewer, cramviewer); mainloop.start(); emulator.getItem(0).setLabel("Pausar emulaÃ§Ã£o"); drawsurface.requestFocus(); } } } );
     vramview.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) {
     	if(vramviewer.enabled) { vramviewer.toggleEnabled(); drawsurface.requestFocus(); }
     	else { vramviewer.toggleEnabled(); drawsurface.requestFocus(); } } } );
@@ -249,46 +249,46 @@ class AboutFrame extends Frame {
 		
 		text.append(Remaster.APPNAME + " - Emulador de SEGA Master System feito em Java.");
 		text.append("\n--------------------------------------------------------------------------------------------");
-		text.append("\nDesenvolvido em 2003-2004 por André Luiz Veltroni Sanches (alvs).");
+		text.append("\nDesenvolvido em 2003-2004 por AndrÃ© Luiz Veltroni Sanches (alvs).");
 		text.append("\nE-mail: andre.alvs@gmail.com");
 		text.append("\nICQ: 69444232");
 		text.append("\n");
 		text.append("\n:: Colaboradores ::");
 		text.append("\n--------------------------");
-		text.append("\n  - Marcelo Abreu (skewer) - conceitos e técnicas.");
+		text.append("\n  - Marcelo Abreu (skewer) - conceitos e tÃ©cnicas.");
 		text.append("\n  - gamer_boy - teste.");
 		text.append("\n  - Todos do canal #emuroms na Brasnet (irc.brasnet.org)");
 		text.append("\n  - Todos do forum de desenvolvimento SMSPower (www.smspower.org)");
 		text.append("\n");
-		text.append("\n:: Requisitos básicos ::");
+		text.append("\n:: Requisitos bÃ¡sicos ::");
 		text.append("\n--------------------------------");
 		text.append("\n  - Processador de 1 Ghz ou superior;");
-		text.append("\n  - 128Mb de memória RAM;");
-		text.append("\n  - Java Runtime Environment versão 1.3.2 ou superior;");
+		text.append("\n  - 128Mb de memÃ³ria RAM;");
+		text.append("\n  - Java Runtime Environment versÃ£o 1.3.2 ou superior;");
 		text.append("\n");
 		text.append("\n:: Como jogar ::");
 		text.append("\n---------------------");
-		text.append("\n  Os joysticks são emulados somente no teclado, na seguinte");
-		text.append("\n  configuração:");
-		text.append("\n  - Tecla Z: botão 2 do joystick 1;");
-		text.append("\n  - Tecla X: botão 1 do joystick 1;");
+		text.append("\n  Os joysticks sÃ£o emulados somente no teclado, na seguinte");
+		text.append("\n  configuraÃ§Ã£o:");
+		text.append("\n  - Tecla Z: botÃ£o 2 do joystick 1;");
+		text.append("\n  - Tecla X: botÃ£o 1 do joystick 1;");
 		text.append("\n  - ESC: Reset;");
-		text.append("\n  - Barra de espaço: Interrompe/continua execução;");
+		text.append("\n  - Barra de espaÃ§o: Interrompe/continua execuÃ§Ã£o;");
 		text.append("\n");
-		text.append("\n:: Características das versões ::");
+		text.append("\n:: CaracterÃ­sticas das versÃµes ::");
 		text.append("\n--------------------------------------------");
 		text.append("\n*** v0.01:");
-		text.append("\n  - Melhoras na criação do buffer gráfico, compativel com as configurações");
+		text.append("\n  - Melhoras na criaÃ§Ã£o do buffer grÃ¡fico, compativel com as configuraÃ§Ãµes");
 		text.append("\n    atuais de cores do desktop.");
-		text.append("\n  - Melhora no esquema de sincronização do som com a jogabilidade.");
-		text.append("\n  - Versão final para a entrega do Trabalho de Conclusão de Curso.");
+		text.append("\n  - Melhora no esquema de sincronizaÃ§Ã£o do som com a jogabilidade.");
+		text.append("\n  - VersÃ£o final para a entrega do Trabalho de ConclusÃ£o de Curso.");
 		text.append("\n");
 		text.append("\n*** v0.00:");
-		text.append("\n  - Atualmente, o Remaster emula somente o master system na versão");
+		text.append("\n  - Atualmente, o Remaster emula somente o master system na versÃ£o");
 		text.append("\n    NTSC 224x190.");
-		text.append("\n  - Emulação do canal gerador de ruido branco ainda nao implementado");
+		text.append("\n  - EmulaÃ§Ã£o do canal gerador de ruido branco ainda nao implementado");
 		text.append("\n  - Compatibilidade de aproximadamente 60% dos jogos.");		
-		text.append("\n  - Primeiro lançamento privado, entregue somente para beta-testers.");
+		text.append("\n  - Primeiro lanÃ§amento privado, entregue somente para beta-testers.");
 		text.append("\n");
 		
 		this.setLayout(new BorderLayout());
