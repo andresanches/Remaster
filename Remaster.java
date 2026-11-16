@@ -104,9 +104,8 @@ public final class Remaster extends Frame {
   public void paint(Graphics g) {
   	if(mainloop != null) screen.drawScreen(0, 0);
   	else {
-  		drawsurface.getGraphics().setColor(new Color(0));
-  		drawsurface.getGraphics().fillRect(0, 0, drawsurface.getWidth(), drawsurface.getHeight());
-  		drawsurface.repaint();
+  		screen.clearBuffer();
+  		screen.drawScreen(0, 0);
   	}
   }
   

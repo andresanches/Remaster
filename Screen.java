@@ -6,8 +6,7 @@ public final class Screen {
   int           width, height, numPixels;
   Component     drawsurface;
   BufferedImage screen;
-  int           fpixels[];  // for pixel color comparing
-  Graphics2D    g, g2;
+  int           pixels[];  // framebuffer storage, the VDP writes pixels directly here
   Window        win;
   boolean       fullscreen;
   
@@ -16,22 +15,17 @@ public final class Screen {
     this.width     = width;
     this.height    = height;
     this.numPixels = this.width * this.height;
-    fpixels = new int[numPixels];
-    Arrays.fill(fpixels, 0xFFFFFF);
     fullscreen = false;
     
-    // Standard way to create a buffered image
-    //this.screen = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB);
-    
-    // Create a buffered image compatible with the current graphics
-    // environment color model. Should be faster but turns out that
-    // there's no much difference, so it's here just for future reference.
-    this.screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(width, height);
-
-    this.screen.getGraphics().setColor(new Color(0));
-
-    g2 = (Graphics2D)screen.getGraphics();
-    g2.setBackground(new Color(0, 0, 0));
+    // TYPE_INT_RGB is backed by a plain int[], retrieved below through the
+    // DataBufferInt, so the VDP writes pixels straight into the framebuffer:
+    // no per-pixel setRGB calls and no color-comparing buffer needed. The
+    // blit to the screen in drawScreen() is still accelerated by the Java 2D
+    // pipeline (Metal/Direct3D/XRender), which is where compatibility images
+    // actually helped.
+    this.screen = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB);
+    this.pixels = ((DataBufferInt)this.screen.getRaster().getDataBuffer()).getData();
+    Arrays.fill(pixels, 0);
   }
   
   public void setDrawsurface(Component d) {
@@ -39,17 +33,12 @@ public final class Screen {
   }
 
   public final void setPixel(int x, int y, int color) {
-  	int location = x + (y * width);
-  	if((x > 0) && (x < width) && (y > 0) && (y < height) && (fpixels[location] != color)) { // clip and avoid calling setRGB for repeated pixel colours
-  	  screen.setRGB(x, y, color);
-  	  fpixels[location] = color;
-  	}
+  	if((x >= 0) && (x < width) && (y >= 0) && (y < height)) // clip
+  	  pixels[x + (y * width)] = color;
   }
   
   public final void clearBuffer() {
-	g2.setColor(new Color(0));
-	g2.fillRect(0, 0, width, height);
-	Arrays.fill(fpixels, 0);
+	Arrays.fill(pixels, 0);
   }
 
   public final void fillRect(int x, int y, int width, int height, int color) {
@@ -58,39 +47,81 @@ public final class Screen {
   			setPixel(i, j, color);
   }
 
+  // Active rendering: draw into the surface's back buffer and flip it (show),
+  // instead of painting straight onto the component with getGraphics().
+  // The contentsLost/contentsRestored loops deal with window resizes,
+  // minimized windows and other buffer invalidations; tearing is gone because
+  // the flip only happens on a complete frame.
   public final void drawScreen(int x, int y) {
-  	if(g == null) g = (Graphics2D)drawsurface.getGraphics();
-  	
-	if(!fullscreen) g.drawImage(this.screen, x, y, drawsurface.getWidth(), drawsurface.getHeight(), drawsurface);
-  	//if(!fullscreen) g.drawImage(this.screen, x, y, width, height, drawsurface);
-	else g.drawImage(this.screen, 32, 0, drawsurface);
+    BufferStrategy bs = getStrategy();
+    if(bs == null) { tryCreateStrategy(); return; }  // strategy will be ready by the next frame
+    
+    try {
+      do {
+        do {
+          Graphics g = bs.getDrawGraphics();
+          if(!fullscreen) g.drawImage(this.screen, x, y, drawsurface.getWidth(), drawsurface.getHeight(), null);
+          else            g.drawImage(this.screen, 32, 0, null);  // 1:1, centered in the 320x200 display mode
+          g.dispose();
+        } while(bs.contentsRestored());
+        bs.show();
+      } while(bs.contentsLost());
+    }
+    catch(IllegalStateException | NullPointerException e) {
+      // Resizing or re-creating a heavyweight component destroys its buffer
+      // strategy at any moment (usually on the AWT thread, mid-blit for us).
+      // The stale strategy object then throws instead of reporting lost
+      // contents, so recreate it and skip this frame; the next one redraws.
+      tryCreateStrategy();
+    }
+  }
+  
+  private final void tryCreateStrategy() {
+    if(!drawsurface.isDisplayable()) return;
+    try { createStrategy(); }
+    catch(RuntimeException e) {}  // peer not ready/unsupported config: retry next frame
+  }
+  
+  // createBufferStrategy/getBufferStrategy are public only on Window and Canvas
+  // (they're protected in Component and in Panel), so dispatch on the surface's
+  // class. Frame and Dialog are Window subclasses; drawing surfaces here are
+  // Canvas subclasses or the fullscreen Window.
+  private final BufferStrategy getStrategy() {
+    if(drawsurface instanceof Window) return ((Window)drawsurface).getBufferStrategy();
+    if(drawsurface instanceof Canvas) return ((Canvas)drawsurface).getBufferStrategy();
+    return null;
+  }
+  
+  private final void createStrategy() {
+    if(drawsurface instanceof Window)      ((Window)drawsurface).createBufferStrategy(2);
+    else if(drawsurface instanceof Canvas) ((Canvas)drawsurface).createBufferStrategy(2);
   }
   
   public void toggleFullScreen(Remaster frame) {
-  	g = null;
   	GraphicsDevice sd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
   	if(!fullscreen) {
-	    win = new Window(frame);
-		win.addKeyListener(frame.drawsurface.getKeyListeners()[0]);
-		win.setBackground(new Color(0));
-		drawsurface = win;
-		sd.setFullScreenWindow(win);
-		win.requestFocus();
-		
-	  	DisplayMode[] available = sd.getDisplayModes();
-	  	for(int i=0; i < available.length; i++) {
-	  		if(available[i].getWidth() == 320 && available[i].getHeight() == 200 && available[i].getBitDepth() == 16 && available[i].getRefreshRate() == 60) {
-	  			sd.setDisplayMode(available[i]);
-	  			break;
-	  		}
-	  	}
-	  	fullscreen = true;
+ 	    win = new Window(frame);
+ 		win.addKeyListener(frame.drawsurface.getKeyListeners()[0]);
+ 		win.setBackground(new Color(0));
+ 		drawsurface = win;
+ 		sd.setFullScreenWindow(win);
+ 		win.requestFocus();
+ 		
+ 	  	DisplayMode[] available = sd.getDisplayModes();
+ 	  	for(int i=0; i < available.length; i++) {
+ 	  		if(available[i].getWidth() == 320 && available[i].getHeight() == 200 && available[i].getBitDepth() == 16 && available[i].getRefreshRate() == 60) {
+ 	  			sd.setDisplayMode(available[i]);
+ 	  			break;
+ 	  		}
+ 	  	}
+ 	  	fullscreen = true;
   	}
   	else {
   		sd.setFullScreenWindow(null);
-  		if(win != null) win = null;
+  		if(win != null) { win.dispose(); win = null; }  // release the native peer of the fullscreen window
   		drawsurface = frame.drawsurface;
   		fullscreen = false;
+  		// a new BufferStrategy is created lazily on the next drawScreen()
     }
   }
 }

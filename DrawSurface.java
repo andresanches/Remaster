@@ -1,7 +1,7 @@
 import java.awt.*;
 import java.awt.event.*;
 
-public final class DrawSurface extends Panel {
+public final class DrawSurface extends Canvas {
 	Remaster parent;
 	
 	DrawSurface(Remaster p) {

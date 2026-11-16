@@ -4,14 +4,14 @@ import java.awt.event.*;
 public final class CRAMViewer extends Frame {
 	VDP vdp;
 	Screen screen;
-	Panel panel;
+	Canvas panel;   // Canvas, not Panel: BufferStrategy methods are public only on Canvas/Window
 	boolean enabled = false;
 	
 	public CRAMViewer(VDP vdp) {
 		super("SMS CRAM Viewer - " + Remaster.APPNAME);
 		
 		this.vdp = vdp;
-		panel = new Panel();
+		panel = new Canvas();
 		add(panel);
 
 		screen = new Screen(panel, 512, 40);
