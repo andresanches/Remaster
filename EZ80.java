@@ -3513,6 +3513,7 @@ public final class EZ80 {
       default:             // Uninmplemented opcode
       	if(!msg.isVisible()) msg.setVisible(true);
         msg.println("PC = $" + Integer.toHexString(pc) + "  0x" + Integer.toHexString(opcode).toUpperCase() + ": Unknown opcode");
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         //memory.dumpMemory();
         //vdp.dumpMemory();
         pc++;
@@ -6365,6 +6366,7 @@ public final class EZ80 {
       default:             // Uninmplemented opcode
       	if(!msg.isVisible()) msg.setVisible(true);
         msg.println("PC = $" + Integer.toHexString(pc) + "  0xCB" + Integer.toHexString(opcode).toUpperCase() + ": Unknown opcode");
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         //memory.dumpMemory();
         //vdp.dumpMemory();
         //System.exit(0);
@@ -7045,6 +7047,7 @@ public final class EZ80 {
       default:             // Uninmplemented opcode
       	if(!msg.isVisible()) msg.setVisible(true);
         msg.println("PC = $" + Integer.toHexString(pc) + "  0xDD" + Integer.toHexString(opcode).toUpperCase() + ": Unknown opcode");
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         //memory.dumpMemory();
         //vdp.dumpMemory();
         //System.exit(0);
@@ -7883,6 +7886,8 @@ public final class EZ80 {
         //memory.dumpMemory();
         //vdp.dumpMemory();
         //System.exit(0);
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
+        pc++;
     }
     flagreg = f;
   }
@@ -8559,6 +8564,7 @@ public final class EZ80 {
       default:             // Uninmplemented opcode
       	if(!msg.isVisible()) msg.setVisible(true);
         msg.println("PC = $" + Integer.toHexString(pc) + "  0xFD" + Integer.toHexString(opcode).toUpperCase() + ": Unknown opcode");
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         //memory.dumpMemory();
         //vdp.dumpMemory();
         //System.exit(0);
@@ -9015,6 +9021,7 @@ public final class EZ80 {
 
       default:             // Uninmplemented opcode
         msg.println("PC = $" + Integer.toHexString(pc - 3) + "  0xDDCB nn " + Integer.toHexString(opcode).toUpperCase() + ": Unknown opcode");
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         //memory.dumpMemory();
         //vdp.dumpMemory();
         //System.exit(0);
@@ -9471,6 +9478,7 @@ public final class EZ80 {
       default:             // Uninmplemented opcode
       	//if(!msg.isVisible()) msg.setVisible(true);
         //msg.println("PC = $" + Integer.toHexString(pc - 3) + "  0xFDCB nn " + Integer.toHexString(opcode).toUpperCase() + ": Unknown opcode");
+        counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         //memory.dumpMemory();
         //vdp.dumpMemory();
         //System.exit(0);
