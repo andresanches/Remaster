@@ -325,13 +325,9 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((aux & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         aux &= 0xFFFF;
         
-        if(aux == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         h = (aux >> 8) & 0xFF;
         l = aux & 0xFF;
@@ -548,13 +544,9 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((aux & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         aux &= 0xFFFF;
         
-        if(aux == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         h = (aux >> 8) & 0xFF;
         l = aux & 0xFF;
@@ -795,13 +787,9 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((aux & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         aux &= 0xFFFF;
         
-        if(aux == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         h = (aux >> 8) & 0xFF;
         l = aux & 0xFF;
@@ -1005,13 +993,9 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((aux & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         aux &= 0xFFFF;
         
-        if(aux == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         h = (aux >> 8) & 0xFF;
         l = aux & 0xFF;
@@ -6394,13 +6378,9 @@ public final class EZ80 {
         else f &= ~FLAG_CARRY;
         
         
-        if((ix & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         ix &= 0xFFFF;
         
-        if(ix == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         f &= ~FLAG_NEG;
         counter -= 15;
@@ -6419,13 +6399,9 @@ public final class EZ80 {
         else f &= ~FLAG_CARRY;
         
         
-        if((ix & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         ix &= 0xFFFF;
         
-        if(ix == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         f &= ~FLAG_NEG;
         counter -= 15;
@@ -6524,13 +6500,9 @@ public final class EZ80 {
         else f &= ~FLAG_CARRY;
         
         
-        if((ix & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         ix &= 0xFFFF;
         
-        if(ix == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         f &= ~FLAG_NEG;
         counter -= 15;
@@ -6680,13 +6652,9 @@ public final class EZ80 {
       	else f &= ~FLAG_CARRY;
 
 
-        if((ix & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         ix &= 0xFFFF;
         
-        if(ix == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
       	
       	f &= ~FLAG_NEG;
        	counter -= 15;
@@ -7911,13 +7879,9 @@ public final class EZ80 {
         else f &= ~FLAG_CARRY;
         
         
-        if((iy & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         iy &= 0xFFFF;
         
-        if(iy == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         f &= ~FLAG_NEG;
         counter -= 15;
@@ -7936,13 +7900,9 @@ public final class EZ80 {
         else f &= ~FLAG_CARRY;
         
         
-        if((iy & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         iy &= 0xFFFF;
         
-        if(iy == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         f &= ~FLAG_NEG;
         counter -= 15;
@@ -8041,13 +8001,9 @@ public final class EZ80 {
         else f &= ~FLAG_CARRY;
         
         
-        if((iy & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         iy &= 0xFFFF;
         
-        if(iy == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
 
         f &= ~FLAG_NEG;
         counter -= 15;
@@ -8197,13 +8153,9 @@ public final class EZ80 {
       	else f &= ~FLAG_CARRY;
 
 
-        if((iy & 0x8000) != 0) f |= FLAG_SIGN;
-        else f &= ~FLAG_SIGN;
         
         iy &= 0xFFFF;
         
-        if(iy == 0) f |= FLAG_ZERO;
-        else f &= ~FLAG_ZERO;
       	
       	f &= ~FLAG_NEG;
        	counter -= 15;
