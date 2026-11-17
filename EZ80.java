@@ -297,7 +297,7 @@ public final class EZ80 {
         
         a &= 0xFF;
 
-        f &= ~(FLAG_HCARRY | FLAG_NEG);
+        f &= ~(FLAG_HCARRY | FLAG_NEG | FLAG_SIGN | FLAG_ZERO | FLAG_PV);
         counter -= 4;
         pc++;
         break;
@@ -421,7 +421,7 @@ public final class EZ80 {
       	
       	a = (a >> 1) & 0xFF;
 
-        f &= ~(FLAG_HCARRY | FLAG_NEG);
+        f &= ~(FLAG_HCARRY | FLAG_NEG | FLAG_SIGN | FLAG_ZERO | FLAG_PV);
         counter -= 4;
         pc++;
         break;
@@ -524,7 +524,7 @@ public final class EZ80 {
         
         a &= 0xFF;
 
-        f &= ~(FLAG_NEG | FLAG_HCARRY);
+        f &= ~(FLAG_NEG | FLAG_HCARRY | FLAG_SIGN | FLAG_ZERO | FLAG_PV);
         counter -= 4;
         pc++;
       	break;
@@ -642,7 +642,7 @@ public final class EZ80 {
 
         a = (a >> 1) & 0xFF;
 
-        f &= ~(FLAG_NEG | FLAG_HCARRY);
+        f &= ~(FLAG_NEG | FLAG_HCARRY | FLAG_SIGN | FLAG_ZERO | FLAG_PV);
         counter -= 4;
         pc++;
         break;
