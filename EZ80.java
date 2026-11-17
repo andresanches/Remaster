@@ -7118,6 +7118,9 @@ public final class EZ80 {
       	if(a == 0x80) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
       	
+      	if((a & 0x0F) != 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
       	a = (0 - a) & 0xFF;
       	
       	if((a & 0x80) == 0x80) f |= FLAG_SIGN;
