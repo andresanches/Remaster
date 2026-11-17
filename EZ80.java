@@ -96,7 +96,7 @@ public final class EZ80 {
 
   	if(halt) {
     	halt = false;
-    	pc++;
+    	pc += 2;
     }
     
     int temp = r;
@@ -133,7 +133,7 @@ public final class EZ80 {
 
   	if(halt) {
     	halt = false;
-    	pc++;
+    	pc += 2;
     }
 
     int temp = r;
