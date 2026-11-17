@@ -7376,8 +7376,8 @@ public final class EZ80 {
       	aux = aux >> 4;
       	aux &= 0xFF;
       	memory.writebyte((h << 8) | l, aux);
-      	
-      	if((a &= 0x80) != 0) f |= FLAG_SIGN;
+       	
+      	if((a & 0x80) != 0) f |= FLAG_SIGN;
       	else f &= ~FLAG_SIGN;
       	
       	if(a == 0) f |= FLAG_ZERO;
@@ -7447,8 +7447,8 @@ public final class EZ80 {
       	a &= 0xF0;
       	a |= (aux >> 8) & 0xF;
       	memory.writebyte((h << 8) | l, aux);
-      	
-      	if((a &= 0x80) != 0) f |= FLAG_SIGN;
+       	
+      	if((a & 0x80) != 0) f |= FLAG_SIGN;
       	else f &= ~FLAG_SIGN;
       	
       	if(a == 0) f |= FLAG_ZERO;
