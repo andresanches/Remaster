@@ -111,7 +111,13 @@ public final class Remaster extends Frame {
     // --------- end of temporary code block -----------------
 */    
     // Setup action listeners
-    addWindowListener(new WindowAdapter() { public void windowClosing(WindowEvent e) { exit(); } } );
+    addWindowListener(new WindowAdapter() {
+      public void windowClosing(WindowEvent e) { exit(); }
+      public void windowActivated(WindowEvent e) {
+        if(getFocusOwner() != drawsurface) drawsurface.requestFocusInWindow();
+      }
+    });
+    drawsurface.requestFocusInWindow();   // best effort: succeeds if the app is already active
 }
   
   public void startEmulation() {

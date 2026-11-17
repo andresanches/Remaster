@@ -8,7 +8,8 @@ public final class DrawSurface extends Canvas {
 		super();
 		
 		this.parent = p;
-		
+		setFocusable(true);   // explicit: the canvas must be able to hold the keyboard focus
+
 	    addKeyListener(new KeyAdapter() {
 	        public void keyPressed(KeyEvent e) {
 	        	switch(e.getKeyCode()) {
