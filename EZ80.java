@@ -6000,8 +6000,8 @@ public final class EZ80 {
         pc++;
         break;
 
-      case 0xC7:           // SET 1, A - 8 cycles
-        a |= 0x02;
+      case 0xC7:           // SET 0, A - 8 cycles
+        a |= 0x01;
         counter -= 8;
         pc++;
         break;
