@@ -2,7 +2,7 @@
  * @author André Luiz Veltroni Sanches - alvs
  *
  * Notes: undocumented opcodes are marked with a * character.
- *        DAA table borrowed from Chris White's JavaGear
+ *        DAA implementation based on Chris White's JavaGear
  *        which is available at http://www.javagear.co.uk
  */
 
@@ -15,7 +15,6 @@ public final class EZ80 {
   public boolean irq;                               // IRQ line
   public boolean nmi;                               // NMI line (console Pause button)
   public int im;                                    // Interrupt mode.
-  public int[] daa;									// precalculated Decimal Adjust Accumulator table
   public boolean[] parity;                          // precalculated parity table
 
   public static final int FLAG_SIGN   = 0x80;
@@ -47,7 +46,6 @@ public final class EZ80 {
     this.ports = ports;
     
     generateParityTable();
-    generateDAATable();
     reset();
     
     opcodes = new Mnemonic();
@@ -735,29 +733,45 @@ public final class EZ80 {
         pc += 2;
         break;
       
-      case 0x27:           // DAA - 4 cycles
-      	if((f & FLAG_NEG) != 0)		a |= 0x100;
-      	if((f & FLAG_CARRY) != 0)	a |= 0x200;
-      	if((f & FLAG_HCARRY) != 0)	a |= 0x400;
-      	a = daa[a];
-      	
-      	if(a > 0xFF) f |= FLAG_CARRY;
+      case 0x27: {         // DAA - 4 cycles
+      	// Algorithmic DAA based on Chris White's JavaGear (thanks Chris White).
+      	// Unlike the old datasheet-style table, this matches real Z80 hardware for
+      	// every flag combination (verified against a hardware DAA table dump):
+      	// most notably it writes the half-carry flag instead of leaving it alone.
+      	int oldA = a;
+      	int correction = 0;
+      	boolean carry = (f & FLAG_CARRY) != 0;
+      
+      	if(((f & FLAG_HCARRY) != 0) || ((oldA & 0x0F) > 0x09)) correction |= 0x06;
+      	if(carry || (oldA > 0x9F) || ((oldA > 0x8F) && ((oldA & 0x0F) > 0x09))) {
+        correction |= 0x60;
+        carry = true;
+      }
+      	if(oldA > 0x99) carry = true;
+      
+      	if((f & FLAG_NEG) != 0) a = (oldA - correction) & 0xFF;
+      	else a = (oldA + correction) & 0xFF;
+      
+      	// Half-carry reflects the +/-6 correction; N is preserved, as on hardware.
+      	if(((oldA ^ correction ^ a) & FLAG_HCARRY) != 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      
+      	if(carry) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
-      	
-      	a &= 0xFF;
-      	
+      
       	if(parity[a]) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
-      	
+      
       	if(a == 0) f |= FLAG_ZERO;
       	else f &= ~FLAG_ZERO;
-      	
+      
       	if((a & 0x80) != 0) f |= FLAG_SIGN;
       	else f &= ~FLAG_SIGN;
 
       	counter -= 4;
       	pc++;
       	break;
+      }
         
       case 0x28:           // JR Z, PC+d - 12/7 cycles
      	if((f & FLAG_ZERO) != 0) {
@@ -9512,98 +9526,7 @@ public final class EZ80 {
     
   }
 
-  // DAA table generator, borrowed from JavaGear (thanks Chris White)
-  private void generateDAATable() {
-		daa = new int[0x800];
 
-		final int NEGATIVE = 0x100;
-		final int CARRY = 0x200;
-		final int HALFCARRY = 0x400;
-
-		for (int x = 0; x <= 0x7FF; x++) {
-			int a = x & 0xFF;
-			int highNibble = (a >> 4);
-			int lowNibble  = (a & 0x0F);
-			boolean carry = false;
-
-			if ((x & NEGATIVE) == 0) { // ADD, ADC, INC
-				if ((x & CARRY) == 0) {
-					if ((x & HALFCARRY) == 0) {
-						if ((highNibble <= 0x08) && (lowNibble <= 0x0F) && (lowNibble >= 0x0A)) // Line 2
-							a+=0x06;
-						else if ((highNibble <= 0x09) && (lowNibble <= 0x09)); // Line 1 of Page 236
-						else if ((highNibble >= 0x0A) && (lowNibble <= 0x09)) { // Line 4
-							a+=0x60;
-							carry = true;
-						}
-						else if ((highNibble >= 0x09) && (lowNibble >= 0x0A)) { // Line 5
-							a+=0x66;
-							carry = true;
-						}
-					}
-					else {// Half Carry is 1, Carry is 0, Negative is 0
-						if ((highNibble <= 0x09) && (lowNibble <= 0x03)) // Line 3
-							a+=0x06;
-						else if ((highNibble >= 0x0A) && (lowNibble <= 0x03)) { // Line 6
-							a+=0x66;
-							carry = true;
-						}
-					}
-
-				}
-				else { // Flag Carry is 1
-					if ((x & HALFCARRY) == 0) { // C = 1, HC = 0, N = 0
-						if ((highNibble <= 0x02) && (lowNibble <= 0x09)) { // Line 7
-							a+=0x60;
-							carry = true;
-						}
-						else if ((highNibble <= 0x02) && (lowNibble >= 0x0A)) { // Line 8
-							a+=0x66;
-							carry = true;
-						}
-					}
-					else { // Half Carry is 1
-						if ((highNibble < 0x04) && (lowNibble < 0x04)) { // Line 9
-							a+=0x66;
-							carry = true;
-						}
-					}
-				}
-			}
-			// Negative Flag is true SUB, SBC, DEC, NEG --------------------------------------
-			else {
-				if ((x & CARRY) == 0) {
-					if ((x & HALFCARRY) == 0) {
-						if ((highNibble < 0x0A) && (lowNibble < 0x0A) );  // Line 10
-					}
-					else { // Flag HalfCarry is 1, Carry = 0, Neg = 1
-						if ((highNibble < 0x09) && (lowNibble > 0x05)) // Line 11
-							a +=0xFA;
-					}
-				}
-				else { // Flag Carry is 1
-					if ((x & HALFCARRY) == 0) {
-						if ((highNibble >= 0x07) && (lowNibble <= 0x09)) { // Line 12
-							a+=0xA0;
-							carry = true;
-						}
-					}
-					else { // Flag HalfCarry is 1
-						if ((highNibble >= 0x06) && (lowNibble >= 0x06)) { // Line 13
-							a +=0x9A;
-							carry = true;
-						}
-					}
-				}
-			}
-
-			a &= 0xFF;
-			if (carry) a|=0x100;
-
-			daa[x] = a;
-		} // end for
-  }
-  
   private void generateParityTable() {
   	parity = new boolean[256];
   	int result;
