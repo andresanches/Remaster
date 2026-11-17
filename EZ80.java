@@ -103,7 +103,6 @@ public final class EZ80 {
     temp++;
     r = (r & 0x80) | (temp & 0x7F);     // increment refresh register preserving bit 7.
     iff1 = false;
-    //iff2 = false;
     irq  = false;
 
     switch(im) {
@@ -3393,7 +3392,7 @@ public final class EZ80 {
 
       case 0xF3:           // DI - 4 cycles
         iff1 = false;
-        //iff2 = false;
+        iff2 = false;
         EIDI_Last = true;
         counter -= 4;
         pc++;
@@ -3468,7 +3467,7 @@ public final class EZ80 {
 
       case 0xFB:           // EI - 4 cycles
         iff1 = true;
-        //iff2 = true;
+        iff2 = true;
         EIDI_Last = true;
         counter -= 4;
         pc++;
