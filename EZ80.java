@@ -2978,6 +2978,7 @@ public final class EZ80 {
 
       case 0xCB:           // CB PREFIXED OPCODES
         pc++;
+        r = (r & 0x80) | ((r + 1) & 0x7F);
         flagreg = f;
         exec_CB_opcode(memory.readbyte(pc));
         f = flagreg;
@@ -3165,6 +3166,7 @@ public final class EZ80 {
         
       case 0xDD:           // DD PREFIXED OPCODES
         pc++;
+        r = (r & 0x80) | ((r + 1) & 0x7F);
         flagreg = f;
         exec_DD_opcode(memory.readbyte(pc));
         f = flagreg;
@@ -3332,6 +3334,7 @@ public final class EZ80 {
         
       case 0xED:           // ED PREFIXED OPCODES
         pc++;
+        r = (r & 0x80) | ((r + 1) & 0x7F);
         flagreg = f;
         exec_ED_opcode(memory.readbyte(pc));
         f = flagreg;
@@ -3485,6 +3488,7 @@ public final class EZ80 {
 
       case 0xFD:           // FD PREFIXED OPCODES
         pc++;
+        r = (r & 0x80) | ((r + 1) & 0x7F);
         flagreg = f;
         exec_FD_opcode(memory.readbyte(pc));
         f = flagreg;
@@ -7001,6 +7005,8 @@ public final class EZ80 {
       
       case 0xCB:           // DD CB prefixed opcodes
       	pc += 2;
+      	r = (r & 0x80) | ((r + 1) & 0x7F);
+      	r = (r & 0x80) | ((r + 1) & 0x7F);
       	flagreg = f;
       	exec_DDCB_opcode(memory.readbyte(pc));
       	f = flagreg;
@@ -8714,6 +8720,8 @@ public final class EZ80 {
       
       case 0xCB:           // DD CB prefixed opcodes
       	pc += 2;
+      	r = (r & 0x80) | ((r + 1) & 0x7F);
+      	r = (r & 0x80) | ((r + 1) & 0x7F);
       	flagreg = f;
       	exec_FDCB_opcode(memory.readbyte(pc));
       	f = flagreg;
