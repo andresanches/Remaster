@@ -72,18 +72,18 @@ public final class EZ80 {
   }
 
   public final void push(int value) {
-  	sp--;
+  	sp = (sp - 1) & 0xFFFF;
     memory.writebyte(sp, value >> 8);
-  	sp--;
+  	sp = (sp - 1) & 0xFFFF;
     memory.writebyte(sp, value);
   }
 
   public final int pop() {
     int val;
     val = memory.readbyte(sp);
-    sp++;
+    sp = (sp + 1) & 0xFFFF;
     val |= (memory.readbyte(sp) << 8);
-    sp++;
+    sp = (sp + 1) & 0xFFFF;
     return val;
   }
   
@@ -3533,6 +3533,7 @@ public final class EZ80 {
         pc++;
     }
     
+    pc &= 0xFFFF;
     flagreg = f;
   }
 
@@ -6385,6 +6386,7 @@ public final class EZ80 {
         //System.exit(0);
         pc++;
     }
+    pc &= 0xFFFF;
     flagreg = f;
   }
 
@@ -7054,6 +7056,7 @@ public final class EZ80 {
         //System.exit(0);
        	pc++;
     }
+    pc &= 0xFFFF;
     flagreg = f;
   }
 
@@ -8100,6 +8103,7 @@ public final class EZ80 {
         counter -= 8;               // charge cycles so execute()'s "while(counter > 0)" loop always makes time progress (see report 12).
         pc++;
     }
+    pc &= 0xFFFF;
     flagreg = f;
   }
 
@@ -8769,6 +8773,7 @@ public final class EZ80 {
         //System.exit(0);
        	pc++;
     }
+    pc &= 0xFFFF;
     flagreg = f;
   }
 
@@ -9226,6 +9231,7 @@ public final class EZ80 {
         //System.exit(0);
         pc++;
     }
+    pc &= 0xFFFF;
     flagreg = f;
   }
   
@@ -9683,6 +9689,7 @@ public final class EZ80 {
         //System.exit(0);
         pc++;
     }
+    pc &= 0xFFFF;
     flagreg = f;
   }
 
