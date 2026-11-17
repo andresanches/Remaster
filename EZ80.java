@@ -7231,7 +7231,7 @@ public final class EZ80 {
       	
       case 0x4D:           // RETI - 10 cycles
         pc = pop();
-        iff1 = true;
+        iff1 = iff2;
         counter -= 10;
         break;
 
