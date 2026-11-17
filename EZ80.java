@@ -1973,10 +1973,10 @@ public final class EZ80 {
 
       	a -= aux;
       	
-      	if(aux < 0) f |= FLAG_CARRY;
+      	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
