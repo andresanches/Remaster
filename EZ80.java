@@ -2027,7 +2027,7 @@ public final class EZ80 {
       	break;
 
       case 0x98:           // SBC A, B - 4 cycles
-      	if((a & 0xF) < ((b & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (b & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= b;
@@ -2054,7 +2054,7 @@ public final class EZ80 {
       	break;
       	
       case 0x99:           // SBC A, C - 4 cycles
-      	if((a & 0xF) < ((c & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (c & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= c;
@@ -2081,7 +2081,7 @@ public final class EZ80 {
       	break;
 
       case 0x9A:           // SBC A, D - 4 cycles
-      	if((a & 0xF) < ((d & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (d & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= d;
@@ -2108,7 +2108,7 @@ public final class EZ80 {
       	break;
       
       case 0x9B:           // SBC A, E - 4 cycles
-      	if((a & 0xF) < ((e & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (e & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= e;
@@ -2135,7 +2135,7 @@ public final class EZ80 {
       	break;
       
       case 0x9C:           // SBC A, H - 4 cycles
-      	if((a & 0xF) < ((h & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (h & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= h;
@@ -2162,7 +2162,7 @@ public final class EZ80 {
       	break;
 
       case 0x9D:           // SBC A, L - 4 cycles
-      	if((a & 0xF) < ((l & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (l & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= l;
@@ -2190,7 +2190,7 @@ public final class EZ80 {
       	
       case 0x9E:           // SBC A, (HL) - 7 cycles
       	aux = memory.readbyte((h << 8) | l);
-      	if((a & 0xF) < ((aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= aux;
@@ -2217,7 +2217,7 @@ public final class EZ80 {
       	break;
       	
       case 0x9F:           // SBC A, A - 4 cycles
-      	if((a & 0xF) < ((a & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (a & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a ^= a;
@@ -3151,7 +3151,7 @@ public final class EZ80 {
       case 0xDE:           // SBC A, n - 4 cycles
       	aux = memory.readbyte(pc+1);
       	
-      	if((a & 0xF) < ((aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
 
       	a -= aux;
@@ -6854,7 +6854,7 @@ public final class EZ80 {
       case 0x9E:           // SBC A, (IX+d) - 19 cycles
       	aux = memory.readbyte((ix + memory.readsigned(pc+1)) & 0xFFFF);
 
-      	if((a & 0xF) < ((aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
       	
       	a -= aux;
@@ -8355,7 +8355,7 @@ public final class EZ80 {
       case 0x9E:           // SBC A, (IY+d) - 19 cycles
       	aux = memory.readbyte((iy + memory.readsigned(pc+1)) & 0xFFFF);
 
-      	if((a & 0xF) < ((aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0))) f |= FLAG_HCARRY;
+      	if(((a & 0xF) - (aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
       	else f &= ~FLAG_HCARRY;
       	
       	a -= aux;
