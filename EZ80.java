@@ -5102,7 +5102,6 @@ public final class EZ80 {
       	else f &= ~(FLAG_ZERO | FLAG_PV);
        	f |= FLAG_HCARRY;
       	f &= ~FLAG_NEG;
-      	f &= ~(FLAG_NEG | FLAG_HCARRY);
       	counter -= 8;
       	pc++;
         break;
