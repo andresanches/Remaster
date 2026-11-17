@@ -114,6 +114,12 @@ public final class EZ80 {
         pc = 0x38;
         counter -= 13;
         break;
+      case 2:
+      	push(pc);
+        temp = (i << 8) | 0xFF;
+        pc = memory.readbyte(temp) | (memory.readbyte((temp + 1) & 0xFFFF) << 8);
+        counter -= 25;
+        break;
       default:	System.out.println("Interrupt mode 2 not yet implemented.");
     }
   }
