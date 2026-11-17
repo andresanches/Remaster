@@ -10,7 +10,7 @@ public final class EZ80 {
   public int a, b, c, d, e, h, l;                   // General Purpose Registers.
   public int a_, f_, b_, c_, d_, e_, h_, l_;        // Shadow Registers.
   public int ix, iy;                                // Index Registers.
-  public int flagreg, r, sp, pc;                    // Flags & Refresh register, Stack Pointer and Program Counter.
+  public int flagreg, r, i, sp, pc;                 // Flags & Refresh register, Interrupt Vector register, Stack Pointer and Program Counter.
   public boolean iff1, iff2;                	    // Interrupt flip-flops and interrupt line register.
   public boolean irq;                               // IRQ line
   public boolean nmi;                               // NMI line (console Pause button)
@@ -59,6 +59,7 @@ public final class EZ80 {
     iy = 0xFFFF;
     flagreg = 0xFF;
     r = 0;
+    i = 0;
     sp = 0xFF;
     pc = 0;
 
@@ -7156,6 +7157,12 @@ public final class EZ80 {
       	pc++;
       	break;
       	
+      case 0x47:           // LD I,A - 9 cycles
+      	i = a;
+      	counter -= 9;
+      	pc++;
+      	break;
+      
       case 0x48:           // IN C, (C) - 12 cycles
        	c = ports.read(c);
         	
@@ -7289,6 +7296,23 @@ public final class EZ80 {
         pc++;
         break;
       
+      case 0x57:           // LD A, I - 9 cycles
+      	a = i & 0xFF;
+
+      	if((a & 0x80) != 0) f |= FLAG_SIGN;
+      	else f &= ~FLAG_SIGN;
+
+      	if(a == 0) f |= FLAG_ZERO;
+      	else f &= ~FLAG_ZERO;
+      	
+      	if(iff2) f |= FLAG_PV;
+      	else f &= ~FLAG_PV;
+      	
+      	f &= ~(FLAG_HCARRY | FLAG_NEG);
+      	counter -= 9;
+      	pc++;
+      	break;
+      
       case 0x58:           // IN E, (C) - 12 cycles
        	e = ports.read(c);
         	
@@ -7349,6 +7373,12 @@ public final class EZ80 {
       	pc += 3;
       	break;
 
+      case 0x5E:           // IM 2 - 8 cycles
+        im = 2;
+        counter -= 8;
+        pc++;
+        break;
+      
       case 0x5F:           // LD A, R - 9 cycles
       	a = r & 0xFF;
 
