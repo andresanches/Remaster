@@ -3170,7 +3170,7 @@ public final class EZ80 {
         f = flagreg;
         break;
         
-      case 0xDE:           // SBC A, n - 4 cycles
+      case 0xDE:           // SBC A, n - 7 cycles
       	aux = memory.readbyte(pc+1);
       	
       	if(((a & 0xF) - (aux & 0xF) - ((f & FLAG_CARRY) != 0 ? 1 : 0)) < 0) f |= FLAG_HCARRY;
@@ -3195,7 +3195,7 @@ public final class EZ80 {
       	      	
       	f |= FLAG_NEG;
       	
-      	counter -= 4;
+      	counter -= 7;
       	pc += 2;
       	break;
       	
@@ -3450,9 +3450,9 @@ public final class EZ80 {
         }
         break;
         
-      case 0xF9:           // LD SP, HL - 20 cycles
+      case 0xF9:           // LD SP, HL - 6 cycles
       	sp = (h << 8) | l;
-      	counter -= 20;
+      	counter -= 6;
       	pc++;
       	break;
         
@@ -3746,7 +3746,7 @@ public final class EZ80 {
       	else f &= ~FLAG_ZERO;
       	
       	f &= ~(FLAG_HCARRY | FLAG_NEG);
-      	counter -= 7;
+      	counter -= 8;
       	pc++;
       	break;
       	
@@ -5008,7 +5008,7 @@ public final class EZ80 {
       	else f &= ~(FLAG_ZERO | FLAG_PV);
        	f |= FLAG_HCARRY;
       	f &= ~FLAG_NEG;
-      	counter -= 8;
+      	counter -= 12;
       	pc++;
       	break;
 
@@ -7664,11 +7664,11 @@ public final class EZ80 {
         pc++;
       	break;
       
-      case 0x7B:           // LD SP, (nn) - 10 cycles
+      case 0x7B:           // LD SP, (nn) - 20 cycles
       	aux = ((memory.readbyte(pc+2) << 8) | memory.readbyte(pc+1));
         sp = memory.readbyte(aux+1) << 8;
         sp |= memory.readbyte(aux);
-        counter -= 10;
+        counter -= 20;
         pc += 3;
         break;
 
@@ -7743,6 +7743,7 @@ public final class EZ80 {
       	else f &= ~FLAG_ZERO;
       	
       	f |= FLAG_NEG;
+      	counter -= 16;
       	pc++;
       	break;
 		
