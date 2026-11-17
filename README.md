@@ -30,6 +30,7 @@ Controls
 * Keyboard arrows: directional pad
 * Key X: button #1
 * Key Z: button #2
+* Key P: console Pause button (raises a non-maskable interrupt to $0066, as on real hardware)
 * Space bar: Pause
 
 Observations

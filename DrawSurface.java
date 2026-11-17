@@ -34,6 +34,9 @@ public final class DrawSurface extends Canvas {
 	        		case 27:   // ESC: Soft reset
 	        			parent.joy.byte2 &= ~Joystick.RESET;
 	        			break;
+	        		case 80:   // Key P: Console Pause button (NMI)
+	        			if(parent.z80 != null) parent.z80.setNMI();
+	        			break;
 	        		case 32:   // SPACE BAR: Hard pause
 	        			if(parent.mainloop != null) {
 	        				parent.mainloop.stopEmulation();

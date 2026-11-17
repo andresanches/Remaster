@@ -166,6 +166,9 @@ public final class Remaster extends Frame {
     emulator = new Menu("Emulação"); // Set up Emulator menu
     CheckboxMenuItem pauseresume = new CheckboxMenuItem("Pause");
     pauseresume.setEnabled(false);
+    MenuItem pausebutton = new MenuItem("Pressionar botão Pause");
+    pausebutton.setShortcut(new MenuShortcut(KeyEvent.VK_P));
+    pausebutton.setEnabled(false);
     CheckboxMenuItem vramview =    new CheckboxMenuItem("Habilitar visualizador de tiles (VRAM)");
     vramview.setEnabled(false);
     CheckboxMenuItem cramview =    new CheckboxMenuItem("Habilitar visualizador da paleta de cores (CRAM)");
@@ -173,6 +176,7 @@ public final class Remaster extends Frame {
     CheckboxMenuItem debug =       new CheckboxMenuItem("Habilitar Debugger");
     debug.setEnabled(false);
     emulator.add(pauseresume);
+    emulator.add(pausebutton);
     emulator.addSeparator();
     emulator.add(vramview);
     emulator.add(cramview);
@@ -245,6 +249,9 @@ public final class Remaster extends Frame {
     pauseresume.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) {
 		if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; drawsurface.requestFocus(); }
 		else { mainloop = new MainThread(screen, cart, memory, vdp, psg, ports, joy, z80, debugger, vramviewer, cramviewer); mainloop.start(); emulator.getItem(0).setLabel("Pausar emulação"); drawsurface.requestFocus(); } } } );
+    pausebutton.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
+    	if(z80 != null) z80.setNMI();
+    	drawsurface.requestFocus(); } } );
     vramview.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) {
     	if(vramviewer.enabled) { vramviewer.toggleEnabled(); drawsurface.requestFocus(); }
     	else { vramviewer.toggleEnabled(); drawsurface.requestFocus(); } } } );
@@ -339,6 +346,7 @@ class AboutFrame extends Frame {
 		text.append("\n  - Tecla Z: botão 2 do joystick 1;");
 		text.append("\n  - Tecla X: botão 1 do joystick 1;");
 		text.append("\n  - ESC: Reset;");
+		text.append("\n  - Tecla P: Botão Pause do console (gera uma interrupção NMI);");
 		text.append("\n  - Barra de espaço: Interrompe/continua execução;");
 		text.append("\n");
 		text.append("\n:: Características das versões ::");

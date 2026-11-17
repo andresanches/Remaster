@@ -13,6 +13,7 @@ public final class EZ80 {
   public int flagreg, r, sp, pc;                    // Flags & Refresh register, Stack Pointer and Program Counter.
   public boolean iff1, iff2;                	    // Interrupt flip-flops and interrupt line register.
   public boolean irq;                               // IRQ line
+  public boolean nmi;                               // NMI line (console Pause button)
   public int im;                                    // Interrupt mode.
   public int[] daa;									// precalculated Decimal Adjust Accumulator table
   public boolean[] parity;                          // precalculated parity table
@@ -68,6 +69,7 @@ public final class EZ80 {
     halt = false;
     iff1 = false;
     iff2 = false;
+    nmi = false;
   }
 
   public final void push(int value) {
@@ -117,11 +119,36 @@ public final class EZ80 {
     }
   }
 
+  public final void setNMI() {
+  	nmi = true;
+  }
+
+  public final void execNMI() {
+  	if(!nmi) return;
+  	nmi = false;                          // single NMI per button press.
+
+  	if(halt) {
+    	halt = false;
+    	pc++;
+    }
+
+    int temp = r;
+    temp++;
+    r = (r & 0x80) | (temp & 0x7F);       // increment refresh register preserving bit 7.
+    iff2 = iff1;                          // NMI copies IFF1 into IFF2...
+    iff1 = false;                         // ...and resets IFF1. IFF2/IM are otherwise untouched.
+
+    push(pc);
+    pc = 0x66;
+    counter -= 11;
+  }
+
   public final void execute(int iperiod) {
     counter += iperiod;
 
     while(counter > 0) {
-      if(irq) interrupt(); // Execute interrupt
+      if(nmi) execNMI();                  // NMI (Pause button) has priority over INT.
+      else if(irq) interrupt();           // Execute interrupt
       
 /*      // ----------- THIS SECTION IS ONLY FOR DEBUGGING ----------
       String op = null; // USED IN THE DEBUGGING SECTION BELOW
@@ -1442,7 +1469,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - b)) & ((a & 0xFF) ^ b) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1466,7 +1493,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - c)) & ((a & 0xFF) ^ c) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1490,7 +1517,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - d)) & ((a & 0xFF) ^ d) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1514,7 +1541,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - e)) & ((a & 0xFF) ^ e) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1538,7 +1565,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - h)) & ((a & 0xFF) ^ h) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1562,7 +1589,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - l)) & ((a & 0xFF) ^ l) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1588,7 +1615,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1612,7 +1639,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a >> 1)) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1634,11 +1661,11 @@ public final class EZ80 {
         a += b;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - b - (f & FLAG_CARRY))) & ((a & 0xFF) ^ b) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1658,11 +1685,11 @@ public final class EZ80 {
         a += c;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - c - (f & FLAG_CARRY))) & ((a & 0xFF) ^ c) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1682,11 +1709,11 @@ public final class EZ80 {
         a += d;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - d - (f & FLAG_CARRY))) & ((a & 0xFF) ^ d) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1706,11 +1733,11 @@ public final class EZ80 {
         a += e;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - e - (f & FLAG_CARRY))) & ((a & 0xFF) ^ e) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1730,11 +1757,11 @@ public final class EZ80 {
         a += h;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - h - (f & FLAG_CARRY))) & ((a & 0xFF) ^ h) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1754,11 +1781,11 @@ public final class EZ80 {
         a += l;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - l - (f & FLAG_CARRY))) & ((a & 0xFF) ^ l) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1780,11 +1807,11 @@ public final class EZ80 {
         a += aux;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - aux - (f & FLAG_CARRY))) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         a &= 0xFF;
         
@@ -1807,7 +1834,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a >> 1)) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -1830,7 +1857,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + b) ^ a) & ((a + b) ^ b) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -1854,7 +1881,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + c) ^ a) & ((a + c) ^ c) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -1878,7 +1905,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + d) ^ a) & ((a + d) ^ d) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -1902,7 +1929,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + e) ^ a) & ((a + e) ^ e) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -1926,7 +1953,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + h) ^ a) & ((a + h) ^ h) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -1950,7 +1977,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + l) ^ a) & ((a + l) ^ l) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -1976,7 +2003,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + aux) ^ a) & ((a + aux) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	a &= 0xFF;
@@ -2006,11 +2033,11 @@ public final class EZ80 {
       	a -= b;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + b + (f & FLAG_CARRY)) ^ a) & ((a + b + (f & FLAG_CARRY)) ^ b) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2033,11 +2060,11 @@ public final class EZ80 {
       	a -= c;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + c + (f & FLAG_CARRY)) ^ a) & ((a + c + (f & FLAG_CARRY)) ^ c) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2060,11 +2087,11 @@ public final class EZ80 {
       	a -= d;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + d + (f & FLAG_CARRY)) ^ a) & ((a + d + (f & FLAG_CARRY)) ^ d) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2087,11 +2114,11 @@ public final class EZ80 {
       	a -= e;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + e + (f & FLAG_CARRY)) ^ a) & ((a + e + (f & FLAG_CARRY)) ^ e) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2114,11 +2141,11 @@ public final class EZ80 {
       	a -= h;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + h + (f & FLAG_CARRY)) ^ a) & ((a + h + (f & FLAG_CARRY)) ^ h) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2141,11 +2168,11 @@ public final class EZ80 {
       	a -= l;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + l + (f & FLAG_CARRY)) ^ a) & ((a + l + (f & FLAG_CARRY)) ^ l) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2169,11 +2196,11 @@ public final class EZ80 {
       	a -= aux;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + aux + (f & FLAG_CARRY)) ^ a) & ((a + aux + (f & FLAG_CARRY)) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2199,8 +2226,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
+        f &= ~FLAG_PV;
         
       	a &= 0xFF;
       	
@@ -2659,7 +2685,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ b) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2680,7 +2706,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ c) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2701,7 +2727,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ d) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2722,7 +2748,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ e) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2743,7 +2769,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ h) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2764,7 +2790,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ l) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2786,7 +2812,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ ((a & 0xFF) - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -2807,8 +2833,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
+        f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
       	
@@ -2883,7 +2908,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
         a &= 0xFF;
@@ -2960,11 +2985,11 @@ public final class EZ80 {
         a += aux;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - aux - (f & FLAG_CARRY))) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
 
         a &= 0xFF;
         
@@ -3045,7 +3070,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + aux) ^ a) & ((a + aux) ^ aux) & 0x80) != 0) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
       	
       	a = a & 0xFF;
@@ -3132,11 +3157,11 @@ public final class EZ80 {
       	a -= aux;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+        if((((a + aux + (f & FLAG_CARRY)) ^ a) & ((a + aux + (f & FLAG_CARRY)) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if(a < -128) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
 		
       	a &= 0xFF;
       	
@@ -3450,7 +3475,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ ((a & 0xFF) - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -6352,8 +6377,6 @@ public final class EZ80 {
         if(ix > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(ix > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         if((ix & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -6379,8 +6402,6 @@ public final class EZ80 {
         if(ix > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(ix > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         if((ix & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -6486,8 +6507,6 @@ public final class EZ80 {
         if(ix > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(ix > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         if((ix & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -6644,8 +6663,6 @@ public final class EZ80 {
       	if(ix > 0xFFFF) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
 
-        if(ix > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
 
         if((ix & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -6782,7 +6799,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
 
         a = (a & 0xFF);
@@ -6807,11 +6824,11 @@ public final class EZ80 {
       	a += aux;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - aux - (f & FLAG_CARRY))) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
 
         a &= 0xFF;
         
@@ -6834,7 +6851,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + aux) ^ a) & ((a + aux) ^ aux) & 0x80) != 0) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
       	
       	a &= 0xFF;
@@ -6858,11 +6875,11 @@ public final class EZ80 {
       	a -= aux;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+      	if((((a + aux + (f & FLAG_CARRY)) ^ a) & ((a + aux + (f & FLAG_CARRY)) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+      	else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-      	if(a < -128) f |= FLAG_PV;
-      	else f &= ~FLAG_PV;
       	
       	a &= 0xFF;
       	
@@ -6956,7 +6973,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ ((a & 0xFF) - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
@@ -7060,7 +7077,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-      	if(aux < -32768) f |= FLAG_PV;
+      	if(((((h << 8) | l) ^ ((b << 8) | c)) & (((h << 8) | l) ^ aux) & 0x8000) != 0) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
       	
       	aux &= 0xFFFF;
@@ -7158,7 +7175,7 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if(aux > 0x7FFF) f |= FLAG_PV;
+        if(((((h << 8) | l) ^ (aux & 0xFFFF)) & (((b << 8) | c) ^ (aux & 0xFFFF)) & 0x8000) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
 
         aux &= 0xFFFF;
@@ -7220,7 +7237,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-      	if(aux < -0x80) f |= FLAG_PV;
+      	if(((((h << 8) | l) ^ ((d << 8) | e)) & (((h << 8) | l) ^ aux) & 0x8000) != 0) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
       	
       	aux &= 0xFFFF;
@@ -7285,7 +7302,7 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(aux > 0x7FFF) f |= FLAG_PV;
+        if(((((h << 8) | l) ^ (aux & 0xFFFF)) & (((d << 8) | e) ^ (aux & 0xFFFF)) & 0x8000) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
 
         aux &= 0xFFFF;
@@ -7405,7 +7422,7 @@ public final class EZ80 {
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
 
-        if(aux > 0x7FFF) f |= FLAG_PV;
+        if(((((h << 8) | l) ^ (aux & 0xFFFF)) & (((h << 8) | l) ^ (aux & 0xFFFF)) & 0x8000) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
 
         aux &= 0xFFFF;
@@ -7871,8 +7888,6 @@ public final class EZ80 {
         if(iy > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(iy > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         if((iy & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -7898,8 +7913,6 @@ public final class EZ80 {
         if(iy > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(iy > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         if((iy & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -8005,8 +8018,6 @@ public final class EZ80 {
         if(iy > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if(iy > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
         
         if((iy & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -8163,8 +8174,6 @@ public final class EZ80 {
       	if(iy > 0xFFFF) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
 
-        if(iy > 0x7FFF) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
 
         if((iy & 0x8000) != 0) f |= FLAG_SIGN;
         else f &= ~FLAG_SIGN;
@@ -8301,7 +8310,7 @@ public final class EZ80 {
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ (a - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
 
         a = (a & 0xFF);
@@ -8326,11 +8335,11 @@ public final class EZ80 {
       	a += aux;
         if((f & FLAG_CARRY) != 0) a++;
 
+        if((((a & 0xFF) ^ (a - aux - (f & FLAG_CARRY))) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
         if(a > 0xFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
         
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
-        else f &= ~FLAG_PV;
 
         a &= 0xFF;
         
@@ -8353,7 +8362,7 @@ public final class EZ80 {
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((a > 0x7F) || a < -0x80) f |= FLAG_PV;
+        if((((a + aux) ^ a) & ((a + aux) ^ aux) & 0x80) != 0) f |= FLAG_PV;
       	else f &= ~FLAG_PV;
       	
       	a &= 0xFF;
@@ -8377,11 +8386,11 @@ public final class EZ80 {
       	a -= aux;
       	if((f & FLAG_CARRY) != 0) a--;
       	
+      	if((((a + aux + (f & FLAG_CARRY)) ^ a) & ((a + aux + (f & FLAG_CARRY)) ^ aux) & 0x80) != 0) f |= FLAG_PV;
+      	else f &= ~FLAG_PV;
       	if(a < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-      	if(a < -128) f |= FLAG_PV;
-      	else f &= ~FLAG_PV;
       	
       	a &= 0xFF;
       	
@@ -8475,7 +8484,7 @@ public final class EZ80 {
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
       	
-        if((aux > 0x7F) || aux < -0x80) f |= FLAG_PV;
+        if((((a & 0xFF) ^ ((a & 0xFF) - aux)) & ((a & 0xFF) ^ aux) & 0x80) != 0) f |= FLAG_PV;
         else f &= ~FLAG_PV;
         
       	aux = aux & 0xFF;
