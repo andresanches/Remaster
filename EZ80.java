@@ -7229,6 +7229,12 @@ public final class EZ80 {
         counter -= 10;
         break;
 
+      case 0x4F:           // LD R,A - 9 cycles
+      	r = a;
+      	counter -= 9;
+      	pc++;
+      	break;
+      
       case 0x50:           // IN D, (C) - 12 cycles
        	d = ports.read(c);
         	
@@ -7419,6 +7425,42 @@ public final class EZ80 {
         pc++;
         break;
         
+      case 0x62:           // SBC HL, HL - 15 cycles
+      	aux = ((h << 8) | l) - ((h << 8) | l);
+      	if((f & FLAG_CARRY) != 0) aux--;
+      	if((((h << 8) | l) & 0xFFF) - (((h << 8) | l) & 0xFFF) - ((f & FLAG_CARRY) != 0 ? 1 : 0) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
+      	if(aux < 0) f |= FLAG_CARRY;
+      	else f &= ~FLAG_CARRY;
+      	
+      	if(((((h << 8) | l) ^ ((h << 8) | l)) & (((h << 8) | l) ^ aux) & 0x8000) != 0) f |= FLAG_PV;
+      	else f &= ~FLAG_PV;
+      	
+      	aux &= 0xFFFF;
+      	
+      	if(aux == 0) f |= FLAG_ZERO;
+      	else f &= ~FLAG_ZERO;
+      	
+      	if((aux & 0x8000) != 0) f |= FLAG_SIGN;
+      	else f &= ~FLAG_SIGN;
+      	
+      	h = (aux >> 8) & 0xFF;
+      	l = aux & 0xFF;
+      	
+      	f |= FLAG_NEG;
+      	counter -= 15;
+      	pc++;
+      	break;
+      
+      case 0x63:           // LD (NN), HL - 20 cycles
+      	aux = ((memory.readbyte(pc+2) << 8) | memory.readbyte(pc+1));
+        memory.writebyte(aux,   l & 0xFF);
+        memory.writebyte(aux+1, h & 0xFF);
+        counter -= 20;
+        pc += 3;
+        break;
+        
       case 0x67:           // RRD - 18 cycles
       	aux = memory.readbyte((h << 8) | l);
       	aux |= ((a & 0xF) << 8);
@@ -7494,6 +7536,14 @@ public final class EZ80 {
         pc++;
       	break;
       
+      case 0x6B:           // LD HL, (nn) - 20 cycles
+      	aux = ((memory.readbyte(pc+2) << 8) | memory.readbyte(pc+1));
+      	h = memory.readbyte(aux + 1);
+      	l = memory.readbyte(aux);
+      	counter -= 20;
+      	pc += 3;
+      	break;
+      
       case 0x6F:           // RLD - 18 cycles
       	aux = memory.readbyte((h << 8) | l);
       	aux = (aux & 0xFF) << 4;
@@ -7522,6 +7572,34 @@ public final class EZ80 {
       	pc++;
       	break;
 	
+      case 0x72:           // SBC HL, SP - 15 cycles
+      	aux = ((h << 8) | l) - sp;
+      	if((f & FLAG_CARRY) != 0) aux--;
+      	if((((h << 8) | l) & 0xFFF) - (sp & 0xFFF) - ((f & FLAG_CARRY) != 0 ? 1 : 0) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
+      	if(aux < 0) f |= FLAG_CARRY;
+      	else f &= ~FLAG_CARRY;
+      	
+      	if(((((h << 8) | l) ^ sp) & (((h << 8) | l) ^ aux) & 0x8000) != 0) f |= FLAG_PV;
+      	else f &= ~FLAG_PV;
+      	
+      	aux &= 0xFFFF;
+      	
+      	if(aux == 0) f |= FLAG_ZERO;
+      	else f &= ~FLAG_ZERO;
+      	
+      	if((aux & 0x8000) != 0) f |= FLAG_SIGN;
+      	else f &= ~FLAG_SIGN;
+      	
+      	h = (aux >> 8) & 0xFF;
+      	l = aux & 0xFF;
+      	
+      	f |= FLAG_NEG;
+      	counter -= 15;
+      	pc++;
+      	break;
+      
       case 0x73:           // LD (NN), SP - 20 cycles
       	aux = ((memory.readbyte(pc+2) << 8) | memory.readbyte(pc+1));
         memory.writebyte(aux  , (sp & 0xFF));
@@ -7553,6 +7631,34 @@ public final class EZ80 {
         pc++;
         break;
         
+      case 0x7A:           // ADC HL, SP - 15 cycles
+      	aux = (h << 8) | l;
+      	aux += sp;
+      	if((f & FLAG_CARRY) != 0) aux++;
+      	if((((h << 8) | l) & 0xFFF) + (sp & 0xFFF) + ((f & FLAG_CARRY) != 0 ? 1 : 0) > 0xFFF) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+        
+        if(aux > 0xFFFF) f |= FLAG_CARRY;
+        else f &= ~FLAG_CARRY;
+        
+        if(((((h << 8) | l) ^ (aux & 0xFFFF)) & (sp ^ (aux & 0xFFFF)) & 0x8000) != 0) f |= FLAG_PV;
+        else f &= ~FLAG_PV;
+
+        aux &= 0xFFFF;
+        
+        if(aux == 0) f |= FLAG_ZERO;
+        else f &= ~FLAG_ZERO;
+        if((aux & 0x8000) != 0) f |= FLAG_SIGN;
+        else f &= ~FLAG_SIGN;
+        
+        h = (aux >> 8) & 0xFF;
+        l = aux & 0xFF;
+
+        f &= ~FLAG_NEG;
+        counter -= 15;
+        pc++;
+      	break;
+      
       case 0x7B:           // LD SP, (nn) - 10 cycles
       	aux = ((memory.readbyte(pc+2) << 8) | memory.readbyte(pc+1));
         sp = memory.readbyte(aux+1) << 8;
@@ -7652,6 +7758,22 @@ public final class EZ80 {
         pc++;
         break;
 
+      case 0xAA:           // IND - 16 cycles
+      	aux = (h << 8) | l;
+      	memory.writebyte(aux, ports.read(c));
+        aux = (aux - 1) & 0xFFFF;
+        h = (aux >> 8) & 0xFF;
+        l = aux & 0xFF;
+
+        b = (b - 1) & 0xFF;
+        if(b == 0) f |= FLAG_ZERO;
+        else f &= ~FLAG_ZERO;
+
+        f |= FLAG_NEG;
+        counter -= 16;
+      	pc++;
+      	break;
+      
       case 0xA8:           // LDD - 16 cycles
       	memory.writebyte((d << 8) | e, memory.readbyte((h << 8) | l));
 
@@ -7801,6 +7923,28 @@ public final class EZ80 {
       	}
         break;
         
+      case 0xB2:           // INIR - 21/16 cycles
+      	memory.writebyte((h << 8) | l, ports.read(c));
+      	l++;              // increment HL
+      	if(l > 0xFF) {
+      		l ^= l;
+      		h = (h + 1) & 0xFF;
+      	}
+      	b = (b - 1) & 0xFF;
+      	if(b == 0) {
+      		f |= FLAG_ZERO;
+          counter -= 16;
+        	pc++;
+      	}
+      	else {
+      		f &= ~FLAG_ZERO;
+          counter -= 21;
+        	pc--;
+      	}
+      
+      	f |= FLAG_NEG;
+      	break;
+      
       case 0xB3:           // OTIR - 21/16 cycles
       	aux = (h << 8) | l;
       	ports.write(c, memory.readbyte(aux));
@@ -7892,6 +8036,27 @@ public final class EZ80 {
       	}
         break;
         
+      case 0xBA:           // INDR - 21/16 cycles
+      	aux = (h << 8) | l;
+      	memory.writebyte(aux, ports.read(c));
+        aux = (aux - 1) & 0xFFFF;
+        h = (aux >> 8) & 0xFF;
+        l = aux & 0xFF;
+
+        b = (b - 1) & 0xFF;
+        if(b == 0) {
+        	f |= FLAG_ZERO;
+            counter -= 16;
+        	pc++;
+        }
+        else {
+        	f &= ~FLAG_ZERO;
+            counter -= 21;
+        	pc--;
+        }
+        f |= FLAG_NEG;
+      	break;
+      
       case 0xBB:           // OTDR - 21/16 cycles
       	aux = (h << 8) | l;
       	ports.write(c, memory.readbyte(aux));
