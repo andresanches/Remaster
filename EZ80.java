@@ -427,11 +427,11 @@ public final class EZ80 {
 
         if(b != 0) {
           pc += memory.readsigned(pc+1);
-          pc &= 0xFFFF;
           counter -= 13;
         }
         else counter -= 8;
         pc += 2;
+        pc &= 0xFFFF;
         break;
 
       case 0x11:            // LD DE, nn - 10 cycles
@@ -646,6 +646,7 @@ public final class EZ80 {
         }
         else counter -= 7;
         pc += 2;
+        pc &= 0xFFFF;
         break;
 
       case 0x21:           // LD HL, nn - 10 cycles
@@ -880,11 +881,11 @@ public final class EZ80 {
       case 0x30:           // JR NC, PC+d - 12/7 cycles
         if((f & FLAG_CARRY) == 0) {
           pc += memory.readsigned(pc+1);
-          pc &= 0xFFFF;
           counter -= 12;
         }
         else counter -= 7;
         pc += 2;
+        pc &= 0xFFFF;
         break;
       	
       case 0x31:           // LD SP, nn - 10 cycles
@@ -979,6 +980,7 @@ public final class EZ80 {
         }
         else counter -= 7;
         pc += 2;
+        pc &= 0xFFFF;
         break;
 
       case 0x39:           // ADD HL, SP - 11 cycles
