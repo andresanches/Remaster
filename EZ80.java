@@ -7079,6 +7079,9 @@ public final class EZ80 {
       case 0x42:           // SBC HL, BC - 15 cycles
       	aux = ((h << 8) | l) - ((b << 8) | c);
       	if((f & FLAG_CARRY) != 0) aux--;
+      	if((((h << 8) | l) & 0xFFF) - (((b << 8) | c) & 0xFFF) - ((f & FLAG_CARRY) != 0 ? 1 : 0) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
       	
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
@@ -7180,6 +7183,9 @@ public final class EZ80 {
       	aux = (h << 8) | l;
       	aux += (b << 8) | c;
       	if((f & FLAG_CARRY) != 0) aux++;
+      	if((((h << 8) | l) & 0xFFF) + (((b << 8) | c) & 0xFFF) + ((f & FLAG_CARRY) != 0 ? 1 : 0) > 0xFFF) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
       	
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
@@ -7242,6 +7248,9 @@ public final class EZ80 {
       case 0x52:           // SBC HL, DE - 15 cycles
       	aux = ((h << 8) | l) - ((d << 8) | e);
       	if((f & FLAG_CARRY) != 0) aux--;
+      	if((((h << 8) | l) & 0xFFF) - (((d << 8) | e) & 0xFFF) - ((f & FLAG_CARRY) != 0 ? 1 : 0) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
       	
       	if(aux < 0) f |= FLAG_CARRY;
       	else f &= ~FLAG_CARRY;
@@ -7307,6 +7316,9 @@ public final class EZ80 {
       	aux = (h << 8) | l;
       	aux += (d << 8) | e;
       	if((f & FLAG_CARRY) != 0) aux++;
+      	if((((h << 8) | l) & 0xFFF) + (((d << 8) | e) & 0xFFF) + ((f & FLAG_CARRY) != 0 ? 1 : 0) > 0xFFF) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
       	
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
@@ -7427,6 +7439,9 @@ public final class EZ80 {
       	aux = (h << 8) | l;
       	aux = aux << 1;
       	if((f & FLAG_CARRY) != 0) aux++;
+      	if((((h << 8) | l) & 0xFFF) + (((h << 8) | l) & 0xFFF) + ((f & FLAG_CARRY) != 0 ? 1 : 0) > 0xFFF) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
+      	
       	
         if(aux > 0xFFFF) f |= FLAG_CARRY;
         else f &= ~FLAG_CARRY;
