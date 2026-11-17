@@ -76,6 +76,7 @@ public final class MemoryManager
   }
   
   public int readsigned(int addr) {
+  	addr &= 0xFFFF;
   	if((addr >= 0xE000) && (addr < 0xFFFF)) // Mirror of RAM at $C000-$DFFF
   		return memory[addr - 0x2000];
   	else
