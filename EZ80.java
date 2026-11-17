@@ -8796,7 +8796,7 @@ public final class EZ80 {
           	else f &= ~FLAG_ZERO;
           	
           	f &= ~(FLAG_HCARRY | FLAG_NEG);
-          	counter -= 15;
+          	counter -= 23;
           	pc++;
           	break;
 
@@ -9252,7 +9252,7 @@ public final class EZ80 {
           	else f &= ~FLAG_ZERO;
           	
           	f &= ~(FLAG_HCARRY | FLAG_NEG);
-          	counter -= 15;
+          	counter -= 23;
           	pc++;
           	break;
 
