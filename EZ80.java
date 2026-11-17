@@ -2680,6 +2680,8 @@ public final class EZ80 {
         break;
       
       case 0xB8:           // CP B - 4 cycles
+      	if(((a & 0xF) - (b & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (b & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2701,6 +2703,8 @@ public final class EZ80 {
       	break;
       
       case 0xB9:           // CP C - 4 cycles
+      	if(((a & 0xF) - (c & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (c & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2722,6 +2726,8 @@ public final class EZ80 {
       	break;
 
       case 0xBA:           // CP D - 4 cycles
+      	if(((a & 0xF) - (d & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (d & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2743,6 +2749,8 @@ public final class EZ80 {
       	break;
         
       case 0xBB:           // CP E - 4 cycles
+      	if(((a & 0xF) - (e & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (e & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2764,6 +2772,8 @@ public final class EZ80 {
       	break;
         
       case 0xBC:           // CP H - 4 cycles
+      	if(((a & 0xF) - (h & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (h & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2785,6 +2795,8 @@ public final class EZ80 {
       	break;
 
       case 0xBD:           // CP L - 4 cycles
+      	if(((a & 0xF) - (l & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (l & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2807,6 +2819,8 @@ public final class EZ80 {
 
       case 0xBE:           // CP (HL) - 7 cycles
       	aux = memory.readbyte((h << 8) | l);
+      	if(((a & 0xF) - (aux & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (aux & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -2828,6 +2842,8 @@ public final class EZ80 {
       	break;
 
       case 0xBF:           // CP A - 4 cycles
+      	if(((a & 0xF) - (a & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (a & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -3470,6 +3486,8 @@ public final class EZ80 {
       
       case 0xFE:           // CP n - 7 cycles
       	aux = memory.readbyte(pc+1);
+      	if(((a & 0xF) - (aux & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (aux & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -6953,6 +6971,8 @@ public final class EZ80 {
 
       case 0xBE:           // CP (IX+d) - 19 cycles
       	aux = memory.readbyte((ix + memory.readsigned(pc+1)) & 0xFFFF);
+      	if(((a & 0xF) - (aux & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (aux & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
@@ -8454,6 +8474,8 @@ public final class EZ80 {
 
       case 0xBE:           // CP (IY+d) - 19 cycles
       	aux = memory.readbyte((iy + memory.readsigned(pc+1)) & 0xFFFF);
+      	if(((a & 0xF) - (aux & 0xF)) < 0) f |= FLAG_HCARRY;
+      	else f &= ~FLAG_HCARRY;
       	aux = (a & 0xFF) - (aux & 0xFF);
 
       	if(aux < 0) f |= FLAG_CARRY;
