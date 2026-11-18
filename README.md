@@ -19,6 +19,7 @@ Features
 * All documented instructions in the Z80 microprocessor are emulated and pass all ZEXALL tests
 * Full graphics chip emulation (VDP) with line-by-line rendering which reproduce with high fidelity certain scanline interrupt effects in games such as parallax scrolling
 * PSG emulation: all 4 sound channels are emulated, albeit still inaccurate (speech is broken. No "get ready" in Afterburner)
+* Battery-backed RAM (SRAM) save games: the save data of games such as Phantasy Star is restored when the ROM is loaded and saved automatically to a .bram file next to the ROM, on a timer and when the ROM is closed or the emulator quits
 * A basic debugger displays CPU, VDP, and PSG register values in real time
 * A basic Video RAM viewer allows for displaying visual tiles in real time
 * A basic palette viewer allows for displaying the current active collors in real time

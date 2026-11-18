@@ -37,6 +37,7 @@ public final class MainThread extends Thread {
     z80.reset();
 
     memory.loadFromCartridge();
+    memory.loadCartRam();
 
     z80.sp = 0xDFF0;   // The SMS bios sets these values at power up.
     z80.flagreg = EZ80.FLAG_ZERO;
@@ -54,7 +55,7 @@ public final class MainThread extends Thread {
   public final void run() {
     System.out.println("EMULATOR: Starting main thread.");
 
-    int drawframe = 0, drawline = 0;
+    int drawframe = 0, drawline = 0, ram_save_frames = 0;
     running = true;
 
     while(running) {
@@ -90,6 +91,11 @@ public final class MainThread extends Thread {
         if(vdp.scanline++ == 262) {
         	vdp.regs[9] = vdp.vscroll_buf;  // updates V Scroll register
         	vdp.scanline = 0;
+
+        	if(++ram_save_frames >= 300) { // flush battery-backed RAM to disk every ~5 seconds
+        	  memory.saveCartRam();          // does nothing if the game has no SRAM or wrote nothing
+        	  ram_save_frames = 0;
+        	}
         	
             if(debugger.enabled) z80.updateDebugger();
             

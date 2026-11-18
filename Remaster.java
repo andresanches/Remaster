@@ -141,6 +141,7 @@ public final class Remaster extends Frame {
   		//memory.dumpMemory();
   		//vdp.dumpMemory();
   	}
+  	memory.saveCartRam();  // flush battery-backed RAM before quitting
   	System.exit(0);
   }
   
@@ -240,6 +241,7 @@ public final class Remaster extends Frame {
     // File Menu
     openRom.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
     	if(z80 != null) z80.msg.setVisible(false);
+    	if(cart.isLoaded()) memory.saveCartRam(); // save battery RAM of the game being replaced
     	cart.unload();
     	cart.showOpenDialog(remaster);
         if(cart.isLoaded()) { emulator.getItem(0).setLabel("Pause emulation"); startEmulation(); } 
@@ -248,6 +250,7 @@ public final class Remaster extends Frame {
     	cart.unload();
     	screen.clearBuffer();
     	if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; }
+    	memory.saveCartRam(); // flush battery-backed RAM of the game just closed
     	setTitle(Remaster.APPNAME);
     	drawsurface.requestFocus(); } } );
     exit.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { exit(); } } );

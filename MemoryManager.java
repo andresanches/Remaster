@@ -11,7 +11,10 @@ public final class MemoryManager
   
   FileOutputStream memdump;
   private boolean hasCartRAM;
-
+  private boolean cartRamWritten;
+  private boolean cartRamDirty;
+  private int cartRamSaveSize;
+  private int cartRamHighWater;
   public MemoryManager(Cartridge cart) {
     this.cart = cart;
 
@@ -59,15 +62,20 @@ public final class MemoryManager
   		memory[0xFFFF] = (byte)(value);
   	}
 
-  	else if((addr >= 0x8000) && (addr < 0xC000) && ((memory[0xFFFC] & 0x8) != 0)) { // Write to Cartridge RAM
- 	  cartRam[(addr - 0x8000) + (((memory[0xFFFC] >> 2) & 1) << 14)] = (byte)(value);
+    else if((addr >= 0x8000) && (addr < 0xC000) && ((memory[0xFFFC] & 0x8) != 0)) { // Write to Cartridge RAM
+      int idx = (addr - 0x8000) + (((memory[0xFFFC] >> 2) & 1) << 14);
+      cartRam[idx] = (byte)(value);
+      cartRamWritten = true;
+      cartRamDirty = true;
+      if(idx > cartRamHighWater) cartRamHighWater = idx;
   	}
   }
 
   public int readbyte(int addr) {
   	addr &= 0xFFFF;
   	if((addr >= 0x8000) && (addr < 0xC000) && ((memory[0xFFFC] & 0x8) != 0)) { // Read from Cartridge ram
-  		return cartRam[(addr - 0x8000) + (((memory[0xFFFC] >> 2) & 1) << 14)] & 0xFF;
+  		int ridx = (addr - 0x8000) + (((memory[0xFFFC] >> 2) & 1) << 14);
+  		return cartRam[ridx] & 0xFF;
   	}
   	else if((addr >= 0xE000) && (addr < 0xFFFC)) // Mirror of RAM at $C000-$DFFF
   		return memory[addr - 0x2000] & 0xFF;
@@ -107,6 +115,72 @@ public final class MemoryManager
   	}
     catch(IOException e) {
       System.out.println("MAIN MEMORY: Error dumping memory!");
+    }
+  }
+
+  // Builds the battery RAM save file path for the currently loaded ROM:
+  // "gamename.sms" -> "gamename.bram", next to the ROM file.
+  private File getSaveFile() {
+    String path = cart.getFullPath();
+    if(path == null) return null;
+    int sep = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+    int dot = path.lastIndexOf('.');
+    if(dot > sep) path = path.substring(0, dot);
+    return new File(path + ".bram");
+  }
+
+  public void loadCartRam() { // Restore battery-backed SRAM on ROM boot
+    cartRamWritten = false;
+    cartRamDirty = false;
+    cartRamHighWater = 0;
+    cartRamSaveSize = 0x2000; // the SMS SRAM is 8k by default
+    Arrays.fill(cartRam, (byte)0);
+
+    File saveFile = getSaveFile();
+    if(saveFile == null || !saveFile.isFile()) return;
+
+    FileInputStream saveStream = null;
+    try {
+      saveStream = new FileInputStream(saveFile);
+      int size = Math.min((int)saveFile.length(), cartRam.length), read = 0;
+      while(read < size) {
+        int count = saveStream.read(cartRam, read, size - read);
+        if(count <= 0) break;
+        read += count;
+      }
+      cartRamSaveSize = Math.max((read + 0x1FFF) & ~0x1FFF, 0x2000); // keep save size, rounded up to 8k banks
+      System.out.println("MEMORY: Restored " + read + " bytes of battery RAM from " + saveFile.getName());
+    }
+    catch(IOException e) {
+      System.out.println("MEMORY: Error loading battery RAM save file!");
+    }
+    finally {
+      try { if(saveStream != null) saveStream.close(); }
+      catch(IOException e) {}
+    }
+  }
+
+  public void saveCartRam() { // Flush battery-backed SRAM to disk. Does nothing for plain ROM carts.
+    if(!cartRamWritten || !cartRamDirty) return;
+
+    File saveFile = getSaveFile();
+    if(saveFile == null) return;
+
+    int size = cartRamSaveSize;
+    if(cartRamHighWater + 1 > size) { // game wrote past the save size: grow it to cover the 32k RAM mapper
+      size = Math.max(Math.min((cartRamHighWater + 0x2000) & ~0x1FFF, cartRam.length), 0x2000);
+    }
+
+    try {
+      FileOutputStream saveStream = new FileOutputStream(saveFile);
+      saveStream.write(cartRam, 0, size);
+      saveStream.close();
+      cartRamDirty = false;
+      cartRamSaveSize = size;
+      System.out.println("MEMORY: Saved battery RAM to " + saveFile.getName());
+    }
+    catch(IOException e) {
+      System.out.println("MEMORY: Error saving battery RAM save file!");
     }
   }
 }
