@@ -122,6 +122,30 @@ public final class VDP {
     }
   }
   
+  public void saveState(DataOutputStream out) throws IOException {
+    for(int i = 0; i < 16; i++) out.writeByte(regs[i]);
+    out.write(cram);
+    out.write(vram);
+
+    out.writeInt(address);      out.writeInt(status);
+    out.writeByte(latch);       out.writeByte(code);
+    out.writeByte(readbuf);     out.writeByte(vscroll_buf);
+    out.writeBoolean(WaitAddress);
+    out.writeInt(hintcounter);  out.writeInt(scanline);
+  }
+
+  public void loadState(DataInputStream in) throws IOException {
+    for(int i = 0; i < 16; i++) regs[i] = in.readUnsignedByte();
+    in.readFully(cram);
+    in.readFully(vram);
+
+    address = in.readInt();        status = in.readInt();
+    latch = in.readUnsignedByte(); code = in.readUnsignedByte();
+    readbuf = in.readUnsignedByte(); vscroll_buf = in.readUnsignedByte();
+    WaitAddress = in.readBoolean();
+    hintcounter = in.readInt();    scanline = in.readInt();
+  }
+
   public void initPal() { // Calculate palette for conversion from BBRRGG to 24-bit RGB.
   	palette = new int[64]; // 64 possible colors
   	for(int i=0; i < 64; i++) {

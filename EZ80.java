@@ -6,6 +6,8 @@
  *        which is available at http://www.javagear.co.uk
  */
 
+import java.io.*;
+
 public final class EZ80 {
   public int a, b, c, d, e, h, l;                   // General Purpose Registers.
   public int a_, f_, b_, c_, d_, e_, h_, l_;        // Shadow Registers.
@@ -69,6 +71,48 @@ public final class EZ80 {
     iff1 = false;
     iff2 = false;
     nmi = false;
+  }
+
+  public void saveState(DataOutputStream out) throws IOException {
+    out.writeByte(a);   out.writeByte(a_);
+    out.writeByte(b);   out.writeByte(b_);
+    out.writeByte(c);   out.writeByte(c_);
+    out.writeByte(d);   out.writeByte(d_);
+    out.writeByte(e);   out.writeByte(e_);
+    out.writeByte(h);   out.writeByte(h_);
+    out.writeByte(l);   out.writeByte(l_);
+
+    out.writeShort(ix);  out.writeShort(iy);
+    out.writeShort(flagreg);
+    out.writeByte(r);    out.writeByte(i);
+    out.writeShort(sp);  out.writeShort(pc);
+    out.writeByte(im);
+
+    out.writeBoolean(iff1);    out.writeBoolean(iff2);
+    out.writeBoolean(irq);     out.writeBoolean(nmi);
+    out.writeBoolean(EIDI_Last); out.writeBoolean(halt);
+    out.writeInt(counter);
+  }
+
+  public void loadState(DataInputStream in) throws IOException {
+    a = in.readUnsignedByte();     a_ = in.readUnsignedByte();
+    b = in.readUnsignedByte();     b_ = in.readUnsignedByte();
+    c = in.readUnsignedByte();     c_ = in.readUnsignedByte();
+    d = in.readUnsignedByte();     d_ = in.readUnsignedByte();
+    e = in.readUnsignedByte();     e_ = in.readUnsignedByte();
+    h = in.readUnsignedByte();     h_ = in.readUnsignedByte();
+    l = in.readUnsignedByte();     l_ = in.readUnsignedByte();
+
+    ix = in.readUnsignedShort();   iy = in.readUnsignedShort();
+    flagreg = in.readUnsignedShort();
+    r = in.readUnsignedByte();     i = in.readUnsignedByte();
+    sp = in.readUnsignedShort();   pc = in.readUnsignedShort();
+    im = in.readUnsignedByte();
+
+    iff1 = in.readBoolean();       iff2 = in.readBoolean();
+    irq = in.readBoolean();        nmi = in.readBoolean();
+    EIDI_Last = in.readBoolean();  halt = in.readBoolean();
+    counter = in.readInt();
   }
 
   public final void push(int value) {

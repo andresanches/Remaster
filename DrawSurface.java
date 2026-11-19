@@ -39,14 +39,8 @@ public final class DrawSurface extends Canvas {
 	        			if(parent.z80 != null) parent.z80.setNMI();
 	        			break;
 	        		case 32:   // SPACE BAR: Hard pause
-	        			if(parent.mainloop != null) {
-	        				parent.mainloop.stopEmulation();
-	        				parent.mainloop = null;
-	        			}
-	        			else {
-	        				parent.mainloop = new MainThread(parent.screen, parent.cart, parent.memory, parent.vdp, parent.psg, parent.ports, parent.joy, parent.z80, parent.debugger, parent.vramviewer, parent.cramviewer);
-	        			    parent.mainloop.start();
-	        			}
+	        			if(parent.mainloop != null) parent.pauseEmulation();
+	        			else parent.resumeEmulation();
 	        			break;
 	        		case 107:  // Numerical PLUS key: Increase frame skip
 	        			if(parent.vdp != null) parent.vdp.frameskip++;
@@ -54,6 +48,12 @@ public final class DrawSurface extends Canvas {
 	        		case 109:  // Numerical MINUS key: Decrease frame skip
 	        			if(parent.vdp != null && parent.vdp.frameskip > 1) parent.vdp.frameskip--;
 	        			break;
+	        		case 116:  // F5 key - save state in the selected slot
+	        				parent.saveGameState();
+	        				break;
+	        		case 118:  // F7 key - restore state from the selected slot
+	        				parent.loadGameState();
+	        				break;
 	        		case 119:  // F8 key - toggle crappy sound synchronization on/off
 	        				parent.psg.crappy_sync = !parent.psg.crappy_sync;
 	        			break;

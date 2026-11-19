@@ -20,6 +20,7 @@ Features
 * Full graphics chip emulation (VDP) with line-by-line rendering which reproduce with high fidelity certain scanline interrupt effects in games such as parallax scrolling
 * PSG emulation: all 4 sound channels are emulated, albeit still inaccurate (speech is broken. No "get ready" in Afterburner)
 * Battery-backed RAM (SRAM) save games: the save data of games such as Phantasy Star is restored when the ROM is loaded and saved automatically to a .bram file next to the ROM, on a timer and when the ROM is closed or the emulator quits
+* Save states: F5 snapshots the whole emulated console (CPU, memory, VDP and PSG) and F7 puts it back, in any of six slots picked in the Emulação menu, slot 1 by default. Each slot is a file next to the ROM (gamename.st1 through gamename.st6), so one game can have six resume points, and a slot is only restorable in the game it was saved from
 * A basic debugger displays CPU, VDP, and PSG register values in real time
 * A basic Video RAM viewer allows for displaying visual tiles in real time
 * A basic palette viewer allows for displaying the current active collors in real time
@@ -33,6 +34,9 @@ Controls
 * Key Z: button #2
 * Key P: console Pause button (raises a non-maskable interrupt to $0066, as on real hardware)
 * Space bar: Pause
+* Key F5: save state in the selected slot
+* Key F7: restore state from the selected slot
+* Emulação > Slot do save state: choose which of the six slots F5 and F7 work on
 
 Observations
 ============

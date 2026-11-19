@@ -18,7 +18,7 @@ public final class Remaster extends Frame {
   VRAMViewer vramviewer;
   CRAMViewer cramviewer;
   
-  boolean adjustingAspect = false;   // guards against the aspect-correction loop
+  boolean adjustingAspect = false;
   int lastCanvasW = 0, lastCanvasH = 0;
   
   MenuBar menubar;
@@ -28,6 +28,11 @@ public final class Remaster extends Frame {
   Menu sound;
   Menu help;
   AboutFrame aboutFrame;
+  
+  Menu saveSlots;                                                        // submenu holding the six save state slots
+  CheckboxMenuItem[] slotitems = new CheckboxMenuItem[SaveState.SLOTS];
+  int savestate_slot = SaveState.DEFAULT_SLOT;                           // slot the save/load state commands work on
+  boolean selectingSlot = false;                                         // guards against the slot exclusivity loop
   
   static String APPNAME = "Remaster v0.01";
   
@@ -40,7 +45,7 @@ public final class Remaster extends Frame {
     setLayout(new BorderLayout());
     setTitle(Remaster.APPNAME);
     setLocation(100, 50);
-    setSize(520, 430);   // rough 2x window; exact size is set after setVisible() below
+    setSize(520, 430);
 
     // create drawing surface panel and add it to the main frame
     drawsurface = new DrawSurface(this);
@@ -48,8 +53,6 @@ public final class Remaster extends Frame {
     screen.clearBuffer();
     add(drawsurface, BorderLayout.CENTER);
     
-    // Keep the drawing area with the same 4:3 aspect ratio of the SMS video
-    // output (256x192 pixels on a 4:3 CRT) when the window is resized.
     addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent e) {
         if(adjustingAspect) return;
@@ -96,9 +99,6 @@ public final class Remaster extends Frame {
     menubar = setup_MenuBar();
     setMenuBar(menubar);
     setVisible(true);
-
-    // Start the emulator in 2x mode (512x384 canvas). Must happen after
-    // setVisible(): window insets are only known once the frame is displayable.
     setWindowSize(2);
     
 /*    // --------- Debug - instruction trace output stream -------
@@ -117,31 +117,93 @@ public final class Remaster extends Frame {
         if(getFocusOwner() != drawsurface) drawsurface.requestFocusInWindow();
       }
     });
-    drawsurface.requestFocusInWindow();   // best effort: succeeds if the app is already active
+    drawsurface.requestFocusInWindow();
 }
   
   public void startEmulation() {
     setTitle(Remaster.APPNAME + " - " + cart.getFileName());
     
-    // Enable menu items
     for(int i=0; i < file.getItemCount(); i++)     file.getItem(i).setEnabled(true);
     for(int i=0; i < emulator.getItemCount(); i++) emulator.getItem(i).setEnabled(true);
     
-    if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; }
+    pauseEmulation();
+    if(mainloop != null) return;
 
     mainloop = new MainThread(screen, cart, memory, vdp, psg, ports, joy, z80, debugger, vramviewer, cramviewer);
     mainloop.SMS_reset();
     
-    mainloop.start();   // Start emulation
+    mainloop.start();
+  }
+
+  public void saveGameState() { saveGameState(savestate_slot); }
+
+  public void saveGameState(int slot) {
+    if(cart == null || !cart.isLoaded()) return;
+
+    boolean wasrunning = pauseEmulation();
+    if(mainloop != null) return;
+
+    SaveState.save(cart, memory, vdp, psg, z80, slot);
+    if(wasrunning) resumeEmulation();
+    drawsurface.requestFocus();
+  }
+
+  public void loadGameState() { loadGameState(savestate_slot); }
+
+  public void loadGameState(int slot) {
+    if(cart == null || !cart.isLoaded()) return;
+
+    boolean wasrunning = pauseEmulation();
+    if(mainloop != null) return;
+
+    if(SaveState.load(cart, memory, vdp, psg, z80, slot)) {
+      if(vramviewer.enabled) vramviewer.update();
+      if(cramviewer.enabled) cramviewer.update();
+      screen.drawScreen(0, 0);
+    }
+    if(wasrunning) resumeEmulation();
+    drawsurface.requestFocus();
+  }
+
+  public boolean pauseEmulation() {
+    if(mainloop == null) return false;
+
+    MainThread emu = mainloop;
+    emu.stopEmulation();
+    try { emu.join(2000); }
+    catch(InterruptedException e) {}
+
+    if(emu.isAlive()) {
+      System.out.println("EMULATOR: Emulation thread is taking too long to stop.");
+      return false;
+    }
+    mainloop = null;
+    return true;
+  }
+
+  public void resumeEmulation() {
+    if(mainloop != null) return;
+
+    mainloop = new MainThread(screen, cart, memory, vdp, psg, ports, joy, z80, debugger, vramviewer, cramviewer);
+    mainloop.start();
+  }
+
+  public void selectSlot(int slot) {
+    if(selectingSlot) return;
+
+    selectingSlot = true;
+    savestate_slot = slot;
+    for(int i=0; i < slotitems.length; i++) slotitems[i].setState((i + 1) == slot);
+    selectingSlot = false;
+
+    System.out.println("SAVESTATE: Using save state slot " + slot + ".");
   }
   
   public void exit() {
-  	if(mainloop != null) {
-  		mainloop.stopEmulation();
-  		//memory.dumpMemory();
-  		//vdp.dumpMemory();
-  	}
-  	memory.saveCartRam();  // flush battery-backed RAM before quitting
+  	pauseEmulation();
+  	//memory.dumpMemory();
+  	//vdp.dumpMemory();
+  	memory.saveCartRam();
   	System.exit(0);
   }
   
@@ -156,7 +218,7 @@ public final class Remaster extends Frame {
   public MenuBar setup_MenuBar() {
   	MenuBar menubar = new MenuBar();
   	
-    file = new Menu("Arquivo"); // Set up File menu
+    file = new Menu("Arquivo");
     MenuItem openRom  = new MenuItem("Abrir ROM");
     openRom.setShortcut(new MenuShortcut(KeyEvent.VK_O));
     MenuItem closeRom = new MenuItem("Fechar ROM");
@@ -170,7 +232,7 @@ public final class Remaster extends Frame {
     file.add(exit);
     menubar.add(file);
     
-    emulator = new Menu("Emulação"); // Set up Emulator menu
+    emulator = new Menu("Emulação");
     CheckboxMenuItem pauseresume = new CheckboxMenuItem("Pause");
     pauseresume.setEnabled(false);
     MenuItem pausebutton = new MenuItem("Pressionar botão Pause");
@@ -189,6 +251,24 @@ public final class Remaster extends Frame {
     emulator.add(cramview);
     emulator.addSeparator();
     emulator.add(debug);
+    emulator.addSeparator();
+    MenuItem savestate = new MenuItem("Salvar estado");
+    savestate.setShortcut(new MenuShortcut(KeyEvent.VK_F5));
+    savestate.setEnabled(false);
+    MenuItem loadstate = new MenuItem("Carregar estado");
+    loadstate.setShortcut(new MenuShortcut(KeyEvent.VK_F7));
+    loadstate.setEnabled(false);
+    emulator.add(savestate);
+    emulator.add(loadstate);
+    saveSlots = new Menu("Slot do save state");
+    for(int i=0; i < SaveState.SLOTS; i++) {
+      final CheckboxMenuItem slotitem = new CheckboxMenuItem("Slot " + (i + 1), (i + 1) == savestate_slot); // slot 1 is the default
+      final int slot = i + 1;
+      slotitem.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { selectSlot(slot); } } );
+      slotitems[i] = slotitem;
+      saveSlots.add(slotitem);
+    }
+    emulator.add(saveSlots);
     menubar.add(emulator);
     
     display = new Menu("Tela");
@@ -241,23 +321,23 @@ public final class Remaster extends Frame {
     // File Menu
     openRom.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
     	if(z80 != null) z80.msg.setVisible(false);
-    	if(cart.isLoaded()) memory.saveCartRam(); // save battery RAM of the game being replaced
+    	if(cart.isLoaded()) memory.saveCartRam();
     	cart.unload();
     	cart.showOpenDialog(remaster);
         if(cart.isLoaded()) { emulator.getItem(0).setLabel("Pause emulation"); startEmulation(); } 
         drawsurface.requestFocus(); } } );
     closeRom.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
+    	pauseEmulation();
     	cart.unload();
     	screen.clearBuffer();
-    	if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; }
-    	memory.saveCartRam(); // flush battery-backed RAM of the game just closed
+    	memory.saveCartRam();
     	setTitle(Remaster.APPNAME);
     	drawsurface.requestFocus(); } } );
     exit.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { exit(); } } );
     // Emulation menu
     pauseresume.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) {
-		if(mainloop != null) { mainloop.stopEmulation(); mainloop = null; drawsurface.requestFocus(); }
-		else { mainloop = new MainThread(screen, cart, memory, vdp, psg, ports, joy, z80, debugger, vramviewer, cramviewer); mainloop.start(); emulator.getItem(0).setLabel("Pausar emulação"); drawsurface.requestFocus(); } } } );
+		if(mainloop != null) { pauseEmulation(); drawsurface.requestFocus(); }
+		else { resumeEmulation(); emulator.getItem(0).setLabel("Pausar emulação"); drawsurface.requestFocus(); } } } );
     pausebutton.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
     	if(z80 != null) z80.setNMI();
     	drawsurface.requestFocus(); } } );
@@ -270,6 +350,8 @@ public final class Remaster extends Frame {
     debug.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) {
     	if(debugger.enabled) { debugger.toggleEnabled(); drawsurface.requestFocus(); }
     	else { debugger.toggleEnabled(); drawsurface.requestFocus(); } } } );
+    savestate.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { saveGameState(); } } );
+    loadstate.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { loadGameState(); } } );
     // Display menu
     fullscreen.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { screen.toggleFullScreen(remaster);	} } );
     originalsize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setWindowSize(1); } } );
@@ -289,8 +371,6 @@ public final class Remaster extends Frame {
     return menubar;
   }
   
-  // Resize the window so the drawing area becomes an integer multiple of the
-  // 256x192 SMS output, keeping the 4:3 aspect ratio.
   public void setWindowSize(int scale) {
   	Insets in = getInsets();   // exact canvas size = (256 x 192) * scale + window borders
   	setSize(in.left + in.right + 256 * scale, in.top + in.bottom + 192 * scale); validate();
@@ -300,7 +380,6 @@ public final class Remaster extends Frame {
   {
     Remaster remaster = new Remaster();
 
-    // ROM file path can be passed on the command line: java Remaster game.sms
     if(args.length > 0) {
       if(remaster.cart.loadRom(args[0])) {
         remaster.emulator.getItem(0).setLabel("Pause emulation");
@@ -325,7 +404,6 @@ class AboutFrame extends Frame {
 		bt_ok.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setVisible(false); } } );
 		
 		scrollpanel = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
-		//scrollpanel.setBackground(new Color(0, 0, 0));
 		text = new TextArea();
 		scrollpanel.add(text);
 		
@@ -357,6 +435,9 @@ class AboutFrame extends Frame {
 		text.append("\n  - ESC: Reset;");
 		text.append("\n  - Tecla P: Botão Pause do console (gera uma interrupção NMI);");
 		text.append("\n  - Barra de espaço: Interrompe/continua execução;");
+		text.append("\n  - Tecla F5: salva o estado do jogo no slot selecionado;");
+		text.append("\n  - Tecla F7: restaura o estado do jogo do slot selecionado;");
+		text.append("\n  - Menu Emulação > Slot do save state: escolhe um dos seis slots; o slot 1 é o padrão;");
 		text.append("\n");
 		text.append("\n:: Características das versões ::");
 		text.append("\n--------------------------------------------");

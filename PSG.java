@@ -1,4 +1,5 @@
 import javax.sound.sampled.*;
+import java.io.*;
 
 public final class PSG {
 	int regs0, regs1, regs2, regs3;                 // channel data
@@ -54,6 +55,33 @@ public final class PSG {
 
 	public void toggleEnabled() {
 		enabled = !enabled;
+	}
+
+	public void saveState(DataOutputStream out) throws IOException {
+		out.writeShort(regs0); out.writeShort(regs1); out.writeShort(regs2); out.writeShort(regs3);
+		out.writeByte(vol0);   out.writeByte(vol1);   out.writeByte(vol2);   out.writeByte(vol3);
+		out.writeByte(polarity0); out.writeByte(polarity1); out.writeByte(polarity2); out.writeByte(polarity3);
+		out.writeInt(counter0); out.writeInt(counter1); out.writeInt(counter2); out.writeInt(counter3);
+		out.writeInt(noise_sr);
+		out.writeByte(current);
+	}
+
+	public void loadState(DataInputStream in) throws IOException {
+		regs0 = in.readUnsignedShort(); regs1 = in.readUnsignedShort();
+		regs2 = in.readUnsignedShort(); regs3 = in.readUnsignedShort();
+
+		vol0 = in.readUnsignedByte(); vol1 = in.readUnsignedByte();
+		vol2 = in.readUnsignedByte(); vol3 = in.readUnsignedByte();
+
+		// polarity is 1 or -1: read back as a signed byte.
+		polarity0 = in.readByte(); polarity1 = in.readByte();
+		polarity2 = in.readByte(); polarity3 = in.readByte();
+
+		counter0 = in.readInt(); counter1 = in.readInt();
+		counter2 = in.readInt(); counter3 = in.readInt();
+
+		noise_sr = in.readInt();
+		current = in.readUnsignedByte();
 	}
 	
 	/* public final void write(int value)
@@ -158,6 +186,7 @@ public final class PSG {
 				if(counter2 <= 0) { counter2 += regs2 & 0x3FF; polarity2 = (polarity2 == 1 ? -1 : 1); }
 			}
 			
+			// channel 3 - periodic/white noise generator
 			if(chan3) {
 				buffer[i] += (byte)(vol3 * polarity3);
 				counter3 -= tick;

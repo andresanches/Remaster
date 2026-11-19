@@ -183,4 +183,26 @@ public final class MemoryManager
       System.out.println("MEMORY: Error saving battery RAM save file!");
     }
   }
+
+  public void saveState(DataOutputStream out) throws IOException {
+    out.write(memory);
+    out.write(cartRam);
+
+    out.writeBoolean(hasCartRAM);
+    out.writeBoolean(cartRamWritten);
+    out.writeBoolean(cartRamDirty);
+    out.writeInt(cartRamSaveSize);
+    out.writeInt(cartRamHighWater);
+  }
+
+  public void loadState(DataInputStream in) throws IOException {
+    in.readFully(memory);
+    in.readFully(cartRam);
+
+    hasCartRAM = in.readBoolean();
+    cartRamWritten = in.readBoolean();
+    cartRamDirty = in.readBoolean();
+    cartRamSaveSize = in.readInt();
+    cartRamHighWater = in.readInt();
+  }
 }
