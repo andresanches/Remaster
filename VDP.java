@@ -13,6 +13,7 @@ public final class VDP {
   boolean WaitAddress;
   int hintcounter, scanline;
   public int frameskip = 1, framecount;
+  public int speed = 1; // 1=60 Hz, 2=120 Hz, 3=180 Hz, 4=240 Hz target emulation rate
   
   public VDP(Screen screen) {
   	this.screen = screen;

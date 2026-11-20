@@ -10,7 +10,10 @@ public final class MainThread extends Thread {
   VRAMViewer vramviewer;
   CRAMViewer cramviewer;
   Debugger debugger;
-  
+
+  FrameClock frameClock;
+  int currentSpeed;
+
   boolean running;
 
   public MainThread(Screen screen, Cartridge cart, MemoryManager memory, VDP vdp, PSG psg, Ports ports, Joystick joy, EZ80 z80, Debugger debugger, VRAMViewer vramviewer, CRAMViewer cramviewer) {
@@ -24,6 +27,12 @@ public final class MainThread extends Thread {
     this.vramviewer = vramviewer;
     this.cramviewer = cramviewer;
     this.debugger = debugger;
+
+    frameClock = new FrameClock(60);
+    currentSpeed = vdp.speed;
+    if(currentSpeed < 1) currentSpeed = 1;
+    if(currentSpeed > 4) currentSpeed = 4;
+    frameClock.setSpeed(currentSpeed);
 
     running = false;
     
@@ -55,7 +64,9 @@ public final class MainThread extends Thread {
   public final void run() {
     System.out.println("EMULATOR: Starting main thread.");
 
-    int drawframe = 0, drawline = 0, ram_save_frames = 0;
+    frameClock.reset();
+
+    int drawframe = 0, drawline = 0, ram_save_frames = 0, audioCounter = 0;
     running = true;
 
     while(running) {
@@ -99,9 +110,6 @@ public final class MainThread extends Thread {
         	
             if(debugger.enabled) z80.updateDebugger();
             
-            sync(); // crappy audio synchronization and frame skipping technique
-	        psg.output();
-
 	        if(drawframe == 0) {
   	          if(vramviewer.enabled) vramviewer.update();
   	          if(cramviewer.enabled) cramviewer.update();
@@ -115,20 +123,23 @@ public final class MainThread extends Thread {
   	          }
             }
        	  	drawframe = (drawframe + 1) % vdp.frameskip;
+            if(currentSpeed != vdp.speed) {
+              currentSpeed = vdp.speed;
+              if(currentSpeed < 1) currentSpeed = 1;
+              if(currentSpeed > 4) currentSpeed = 4;
+              frameClock.setSpeed(currentSpeed);
+              audioCounter = 0;
+            }
+
+            if(audioCounter == 0) psg.output();
+            audioCounter = (audioCounter + 1) % currentSpeed;
+            sync();
         }
     }
   }
   
   public void sync() {
-	if(!psg.enabled || !psg.crappy_sync) return;
-		
-	int available = psg.line.available();
-	// hold if there's too much data stored in the audio line buffer.
-	if(available == psg.bufsiz) vdp.frameskip++;
-	else {
-		while(available < (psg.bufsiz - (psg.bufferLength << 2))) available = psg.line.available();
-		if(vdp.frameskip > 1) vdp.frameskip--;
-	}
+    frameClock.endFrameAndSleep();
   }
   
   public void exit() {

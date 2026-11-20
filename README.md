@@ -24,6 +24,8 @@ Features
 * A basic debugger displays CPU, VDP, and PSG register values in real time
 * A basic Video RAM viewer allows for displaying visual tiles in real time
 * A basic palette viewer allows for displaying the current active collors in real time
+* Fixed-timestep frame pacing: frame pacing is always controlled by a monotonic clock instead of by the audio buffer, using a larger Java Sound output buffer
+* Emulation speed options: 1x, 2x, 3x, and 4x target rates, corresponding to 60, 120, 180, and 240 Hz emulation timing
 * All graphics, sound, and input systems are built using Java's standard library. No need for a convoluted build system.
 
 Controls
@@ -37,6 +39,9 @@ Controls
 * Key F5: save state in the selected slot
 * Key F7: restore state from the selected slot
 * Emulação > Slot do save state: choose which of the six slots F5 and F7 work on
+* Numeric Plus / Numeric Minus: increase/decrease render frameskip
+* Keys 1 / 2 / 3 / 4: set emulation speed to 1x, 2x, 3x, or 4x
+* Emulação > Velocidade: choose 1x, 2x, 3x, or 4x emulation speed; selecting a speed adjusts render frameskip so display stays near 60 Hz
 
 Observations
 ============

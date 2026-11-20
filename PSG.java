@@ -11,7 +11,6 @@ public final class PSG {
 	int clock = 3579545 / 16;                       // clock frequency (NTSC only)
 	int tick  = (clock / 60) / 735;                 // how many ticks in a frame
 	int current;                                    // currently latched channel
-	boolean crappy_sync = true;                     // crappy sound synchronization method (experimental)
 
 	AudioFormat format;
 	SourceDataLine line;
@@ -36,7 +35,7 @@ public final class PSG {
 		else {
 			try {
 				line = (SourceDataLine)AudioSystem.getLine(info);
-				line.open(format);
+				line.open(format, Math.max(16384, sampleRate / 2)); // about 500 ms requested
 				buffer = new byte[bufferLength];
 				bufsiz = line.getBufferSize();
 				line.start();
@@ -199,6 +198,11 @@ public final class PSG {
 			}
 		}
 		
-		line.write(buffer, 0, bufferLength); // output data to speakers
+		try {
+			line.write(buffer, 0, bufferLength); // output data to speakers
+		} catch(RuntimeException e) {
+			enabled = false;
+			System.out.println("PSG ERROR: audio line failed, sound is disabled");
+		}
 	}
 }

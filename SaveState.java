@@ -14,7 +14,7 @@ import java.io.*;
  * they are the keys the user happens to be holding when the snapshot is taken,
  * not console state, and restoring them would leave buttons stuck down.
  * Emulator settings that are not part of the hardware (sound and channel
- * enable flags, crappy sound synchronization, frameskip) are not saved either.
+ * enable flags, speed multiplier, frameskip) are not saved either.
  */
 public final class SaveState {
   public static final int SLOTS = 6;          // save slots offered to the user

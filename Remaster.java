@@ -33,6 +33,11 @@ public final class Remaster extends Frame {
   CheckboxMenuItem[] slotitems = new CheckboxMenuItem[SaveState.SLOTS];
   int savestate_slot = SaveState.DEFAULT_SLOT;                           // slot the save/load state commands work on
   boolean selectingSlot = false;                                         // guards against the slot exclusivity loop
+
+  Menu speedSlots;                                                       // submenu holding 1x/2x/3x/4x speed options
+  CheckboxMenuItem[] speeditems = new CheckboxMenuItem[4];
+  int speed_setting = 1;                                                 // target emulation speed: 1=60 Hz, 2=120 Hz, 3=180 Hz, 4=240 Hz
+  boolean selectingSpeed = false;                                        // guards against the speed exclusivity loop
   
   static String APPNAME = "Remaster v0.01";
   
@@ -198,6 +203,23 @@ public final class Remaster extends Frame {
 
     System.out.println("SAVESTATE: Using save state slot " + slot + ".");
   }
+
+  public void selectSpeed(int speed) {
+    if(selectingSpeed) return;
+    if(speed < 1) speed = 1;
+    if(speed > 4) speed = 4;
+
+    selectingSpeed = true;
+    speed_setting = speed;
+    vdp.speed = speed;
+    vdp.frameskip = speed; // keep on-screen presentation near 60 Hz while emulating faster
+
+    for(int i=0; i < speeditems.length; i++) speeditems[i].setState((i + 1) == speed);
+    selectingSpeed = false;
+
+    System.out.println("EMULATOR: Speed set to " + speed + "x (" + (60 * speed) + " Hz target).");
+    drawsurface.requestFocus();
+  }
   
   public void exit() {
   	pauseEmulation();
@@ -208,11 +230,9 @@ public final class Remaster extends Frame {
   }
   
   public void paint(Graphics g) {
-  	if(mainloop != null) screen.drawScreen(0, 0);
-  	else {
-  		screen.clearBuffer();
-  		screen.drawScreen(0, 0);
-  	}
+  	// MainThread owns active rendering while emulation is running. The AWT
+  	// paint path is only a fallback for the blank/paused window.
+  	if(mainloop == null) screen.drawScreen(0, 0);
   }
   
   public MenuBar setup_MenuBar() {
@@ -269,19 +289,24 @@ public final class Remaster extends Frame {
       saveSlots.add(slotitem);
     }
     emulator.add(saveSlots);
+    speedSlots = new Menu("Velocidade");
+    for(int i=0; i < speeditems.length; i++) {
+      final CheckboxMenuItem speeditem = new CheckboxMenuItem((i + 1) + "x", (i + 1) == speed_setting);
+      final int spd = i + 1;
+      speeditem.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { selectSpeed(spd); } } );
+      speeditems[i] = speeditem;
+      speedSlots.add(speeditem);
+    }
+    emulator.add(speedSlots);
     menubar.add(emulator);
     
     display = new Menu("Tela");
     MenuItem fullscreen = new MenuItem("Tela cheia");
     fullscreen.setShortcut(new MenuShortcut(KeyEvent.VK_ENTER));
     MenuItem originalsize = new MenuItem("Tamanho original");
-    originalsize.setShortcut(new MenuShortcut(KeyEvent.VK_1));
     MenuItem doublesize = new MenuItem("Tamanho dobrado");
-    doublesize.setShortcut(new MenuShortcut(KeyEvent.VK_2));
     MenuItem triplesize = new MenuItem("Tamanho triplicado");
-    triplesize.setShortcut(new MenuShortcut(KeyEvent.VK_3));
     MenuItem quadruplesize = new MenuItem("Tamanho quadruplicado");
-    quadruplesize.setShortcut(new MenuShortcut(KeyEvent.VK_4));
     display.add(fullscreen);
     display.addSeparator();
     display.add(originalsize);
@@ -294,8 +319,6 @@ public final class Remaster extends Frame {
     CheckboxMenuItem enablesound = new CheckboxMenuItem("Ligar/desligar som");
     enablesound.setShortcut(new MenuShortcut(KeyEvent.VK_S));
     enablesound.setState(psg.enabled);
-    CheckboxMenuItem crappysync = new CheckboxMenuItem("Sincronizar som (experimental)");
-    crappysync.setState(psg.crappy_sync);
     CheckboxMenuItem soundchan0 = new CheckboxMenuItem("Ligar/Desligar canal 0");
     soundchan0.setState(psg.chan0);
     CheckboxMenuItem soundchan1 = new CheckboxMenuItem("Ligar/Desligar canal 1");
@@ -305,7 +328,6 @@ public final class Remaster extends Frame {
     CheckboxMenuItem soundchan3 = new CheckboxMenuItem("Ligar/Desligar canal 3 (ruído)");
     soundchan3.setState(psg.chan3);
     sound.add(enablesound);
-    sound.add(crappysync);
     sound.addSeparator();
     sound.add(soundchan0);
     sound.add(soundchan1);
@@ -360,7 +382,6 @@ public final class Remaster extends Frame {
     quadruplesize.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setWindowSize(4); } } );
     // Sound menu
     enablesound.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.enabled = !psg.enabled; } } );
-    crappysync.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.crappy_sync = !psg.crappy_sync; } } );
     soundchan0.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan0 = !psg.chan0; } } );
     soundchan1.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan1 = !psg.chan1; } } );
     soundchan2.addItemListener(new ItemListener() { public void itemStateChanged(ItemEvent e) { psg.chan2 = !psg.chan2; } } );
@@ -438,6 +459,9 @@ class AboutFrame extends Frame {
 		text.append("\n  - Tecla F5: salva o estado do jogo no slot selecionado;");
 		text.append("\n  - Tecla F7: restaura o estado do jogo do slot selecionado;");
 		text.append("\n  - Menu Emulação > Slot do save state: escolhe um dos seis slots; o slot 1 é o padrão;");
+		text.append("\n  - Teclas + e - do teclado numérico: aumentam/diminuem o frameskip de renderização;");
+		text.append("\n  - Teclas 1, 2, 3 e 4: definem a velocidade da emulação para 1x, 2x, 3x ou 4x;");
+		text.append("\n  - Menu Emulação > Velocidade: também permite escolher 1x, 2x, 3x ou 4x;");
 		text.append("\n");
 		text.append("\n:: Características das versões ::");
 		text.append("\n--------------------------------------------");

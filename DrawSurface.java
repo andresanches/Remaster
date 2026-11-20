@@ -48,15 +48,24 @@ public final class DrawSurface extends Canvas {
 	        		case 109:  // Numerical MINUS key: Decrease frame skip
 	        			if(parent.vdp != null && parent.vdp.frameskip > 1) parent.vdp.frameskip--;
 	        			break;
+	        		case 49:  // Key 1: emulation speed 1x
+	        				parent.selectSpeed(1);
+	        				break;
+	        		case 50:  // Key 2: emulation speed 2x
+	        				parent.selectSpeed(2);
+	        				break;
+	        		case 51:  // Key 3: emulation speed 3x
+	        				parent.selectSpeed(3);
+	        				break;
+	        		case 52:  // Key 4: emulation speed 4x
+	        				parent.selectSpeed(4);
+	        				break;
 	        		case 116:  // F5 key - save state in the selected slot
 	        				parent.saveGameState();
 	        				break;
 	        		case 118:  // F7 key - restore state from the selected slot
 	        				parent.loadGameState();
 	        				break;
-	        		case 119:  // F8 key - toggle crappy sound synchronization on/off
-	        				parent.psg.crappy_sync = !parent.psg.crappy_sync;
-	        			break;
 	        		case 122:  // F11 key - borderless fullscreen on/off
 	        			parent.screen.toggleFullScreen(parent);
 	        			break;
@@ -94,7 +103,13 @@ public final class DrawSurface extends Canvas {
 	}
 	
 	public void paint(Graphics g) {
-		parent.screen.drawScreen(0, 0);
+		// MainThread owns active rendering while emulation is running. Let AWT
+		// only repaint the fallback surface when no emulation thread exists.
+		if(parent.mainloop == null) parent.screen.drawScreen(0, 0);
+	}
+
+	public void update(Graphics g) {
+		paint(g);
 	}
 
 	public void paintAll(Graphics g) {}
